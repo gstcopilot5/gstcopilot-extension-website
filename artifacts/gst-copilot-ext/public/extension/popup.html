@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GST Copilot</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -11,705 +10,571 @@
       width: 400px;
       min-height: 600px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f0fdf4;
-      color: #1a2e1a;
+      background: #f8fafc;
+      color: #0f172a;
     }
 
+    /* ── Header ──────────────────────────────────────────── */
     .header {
-      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-      padding: 16px 20px;
+      background: #0f172a;
+      padding: 14px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(22,163,74,0.3);
     }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
+    .header-left { display: flex; align-items: center; gap: 10px; }
     .logo {
-      width: 36px;
-      height: 36px;
-      background: rgba(255,255,255,0.2);
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, #16a34a, #15803d);
       border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px;
     }
-
-    .header h1 {
-      color: white;
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-    }
-
-    .header p {
-      color: rgba(255,255,255,0.8);
-      font-size: 11px;
-      margin-top: 1px;
-    }
-
+    .header-title { color: #f8fafc; font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-sub { color: #64748b; font-size: 10px; margin-top: 1px; letter-spacing: 0.2px; text-transform: uppercase; }
+    .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
     .free-badge {
-      background: rgba(255,255,255,0.2);
-      color: white;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.3);
-      white-space: nowrap;
+      background: rgba(22,163,74,0.15);
+      color: #4ade80;
+      font-size: 10px; font-weight: 700;
+      padding: 3px 9px; border-radius: 20px;
+      border: 1px solid rgba(22,163,74,0.3);
+      letter-spacing: 0.3px;
     }
+    .checks-bar { font-size: 9px; color: #475569; text-align: right; }
 
-    .checks-counter {
-      font-size: 10px;
-      color: rgba(255,255,255,0.7);
-      text-align: center;
-      margin-top: 2px;
-    }
-
-    .content {
-      padding: 16px;
-    }
-
+    /* ── Tabs ────────────────────────────────────────────── */
     .tabs {
       display: flex;
-      background: white;
-      border-radius: 10px;
-      padding: 4px;
-      margin-bottom: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
     }
-
     .tab {
-      flex: 1;
-      padding: 8px;
-      border: none;
-      background: transparent;
-      border-radius: 7px;
-      font-size: 12px;
-      font-weight: 500;
-      color: #6b7280;
-      cursor: pointer;
+      flex: 1; padding: 10px 4px;
+      border: none; background: transparent;
+      font-size: 11px; font-weight: 600;
+      color: #475569; cursor: pointer;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 2px solid transparent;
       transition: all 0.2s;
     }
+    .tab:hover { color: #94a3b8; }
+    .tab.active { color: #4ade80; border-bottom-color: #16a34a; }
 
-    .tab.active {
-      background: #16a34a;
-      color: white;
-      box-shadow: 0 2px 4px rgba(22,163,74,0.3);
-    }
+    /* ── Tab Content ─────────────────────────────────────── */
+    .tab-content { display: none; padding: 14px; }
+    .tab-content.active { display: block; }
 
-    .section {
+    /* ── Card / Section ──────────────────────────────────── */
+    .card {
       background: white;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 14px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 12px;
     }
-
-    .section-title {
-      font-size: 12px;
-      font-weight: 600;
-      color: #6b7280;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 10px;
+    .card-header {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 8px 14px;
+      display: flex; align-items: center; justify-content: space-between;
     }
-
-    .input-group {
-      position: relative;
-      margin-bottom: 10px;
+    .card-title {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.6px;
+      color: #64748b;
     }
+    .card-body { padding: 12px 14px; }
 
-    .input-group input {
-      width: 100%;
-      padding: 11px 14px;
-      border: 1.5px solid #d1fae5;
-      border-radius: 8px;
-      font-size: 14px;
-      font-family: 'Courier New', monospace;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      color: #1a2e1a;
-      background: #f9fafb;
-      transition: border-color 0.2s;
+    /* ── Input ───────────────────────────────────────────── */
+    .input-wrap { position: relative; margin-bottom: 10px; }
+    .input-wrap input {
+      width: 100%; padding: 10px 90px 10px 12px;
+      border: 1.5px solid #e2e8f0; border-radius: 8px;
+      font-size: 13px; font-family: 'Courier New', monospace;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: #0f172a; background: #f8fafc;
+      transition: border-color 0.2s, background 0.2s;
       outline: none;
     }
-
-    .input-group input:focus {
-      border-color: #16a34a;
-      background: white;
+    .input-wrap input:focus { border-color: #16a34a; background: white; }
+    .input-wrap input::placeholder {
+      text-transform: none; font-family: -apple-system, sans-serif;
+      letter-spacing: 0; color: #94a3b8; font-size: 12px;
     }
-
-    .input-group input::placeholder {
-      text-transform: none;
-      font-family: -apple-system, sans-serif;
-      letter-spacing: 0;
-      color: #9ca3af;
-    }
-
-    .extract-btn {
-      position: absolute;
-      right: 8px;
-      top: 50%;
+    .input-actions {
+      position: absolute; right: 6px; top: 50%;
       transform: translateY(-50%);
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      color: #16a34a;
-      font-size: 11px;
-      padding: 4px 8px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: 500;
+      display: flex; gap: 4px;
     }
+    .btn-sm {
+      padding: 4px 8px; border-radius: 5px;
+      font-size: 10px; font-weight: 700;
+      border: 1px solid; cursor: pointer;
+      transition: all 0.15s; letter-spacing: 0.2px;
+    }
+    .btn-extract {
+      background: #f0fdf4; border-color: #bbf7d0; color: #15803d;
+    }
+    .btn-extract:hover { background: #dcfce7; }
 
-    .extract-btn:hover { background: #dcfce7; }
-
-    .validate-btn {
-      width: 100%;
-      padding: 12px;
-      background: linear-gradient(135deg, #16a34a, #15803d);
-      color: white;
-      border: none;
-      border-radius: 9px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
+    /* ── Primary Button ──────────────────────────────────── */
+    .btn-primary {
+      width: 100%; padding: 11px;
+      background: #16a34a; color: white;
+      border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer; letter-spacing: 0.2px;
       transition: all 0.2s;
-      letter-spacing: 0.2px;
-      box-shadow: 0 2px 6px rgba(22,163,74,0.3);
+      display: flex; align-items: center; justify-content: center; gap: 6px;
     }
+    .btn-primary:hover { background: #15803d; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .validate-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(22,163,74,0.4);
-    }
-
-    .validate-btn:active { transform: translateY(0); }
-    .validate-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
+    /* ── Loader ──────────────────────────────────────────── */
     .loader {
-      display: inline-block;
-      width: 14px;
-      height: 14px;
+      width: 13px; height: 13px;
       border: 2px solid rgba(255,255,255,0.3);
       border-top-color: white;
       border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
+      animation: spin 0.6s linear infinite;
     }
-
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    #results {
-      display: none;
-    }
-
-    .result-card {
-      background: white;
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-      border-left: 3px solid #16a34a;
-    }
-
-    .result-card.error {
-      border-left-color: #ef4444;
-    }
-
-    .result-card.warning {
-      border-left-color: #f59e0b;
-    }
-
-    .result-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-
-    .result-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #374151;
-    }
-
-    .status-badge {
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-
-    .status-badge.valid {
-      background: #dcfce7;
-      color: #15803d;
-    }
-
-    .status-badge.invalid {
-      background: #fee2e2;
-      color: #dc2626;
-    }
-
-    .status-badge.warning {
-      background: #fef3c7;
-      color: #d97706;
-    }
-
+    /* ── Result Table ─────────────────────────────────────── */
+    #results { display: none; }
     .result-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 5px 0;
-      border-bottom: 1px solid #f3f4f6;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding: 7px 0; border-bottom: 1px solid #f1f5f9;
       font-size: 12px;
     }
-
-    .result-row:last-child { border-bottom: none; }
-
-    .result-label {
-      color: #6b7280;
-      font-weight: 500;
-      min-width: 100px;
-    }
-
-    .result-value {
-      color: #111827;
-      font-weight: 500;
-      text-align: right;
-      font-family: 'Courier New', monospace;
-      font-size: 11px;
+    .result-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .result-row:first-child { padding-top: 0; }
+    .r-label { color: #64748b; font-weight: 500; min-width: 110px; }
+    .r-value {
+      color: #0f172a; font-weight: 600;
+      text-align: right; max-width: 200px;
+      font-family: 'Courier New', monospace; font-size: 11px;
       word-break: break-all;
-      max-width: 200px;
     }
+    .r-value.green { color: #16a34a; }
+    .r-value.red { color: #dc2626; }
+    .r-value.blue { color: #2563eb; }
 
-    .result-value.highlight {
-      color: #16a34a;
-      font-weight: 700;
+    /* ── Status Pill ─────────────────────────────────────── */
+    .pill {
+      padding: 2px 9px; border-radius: 20px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
     }
+    .pill-green { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .pill-red { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+    .pill-amber { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+    .pill-blue { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
 
-    .result-value.alert {
-      color: #dc2626;
-      font-weight: 700;
-    }
-
+    /* ── Dispute Box ─────────────────────────────────────── */
     .dispute-box {
       background: #fffbeb;
-      border: 1px dashed #f59e0b;
-      border-radius: 8px;
-      padding: 10px 12px;
-      margin-top: 10px;
-      font-size: 11.5px;
-      color: #78350f;
-      line-height: 1.5;
+      border: 1px solid #fde68a; border-radius: 8px;
+      padding: 10px 12px; margin-top: 10px;
+      font-size: 11.5px; color: #78350f; line-height: 1.6;
     }
-
-    .dispute-box strong { color: #92400e; }
-
-    .copy-btn {
-      display: block;
-      width: 100%;
-      margin-top: 8px;
-      padding: 7px;
-      background: #fef3c7;
-      border: 1px solid #fde68a;
-      color: #92400e;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      transition: background 0.2s;
+    .dispute-label {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      color: #92400e; margin-bottom: 4px;
     }
-
-    .copy-btn:hover { background: #fde68a; }
-
-    .hsn-section .input-row {
-      display: flex;
-      gap: 8px;
+    .btn-copy {
+      width: 100%; margin-top: 8px;
+      padding: 7px; background: white;
+      border: 1.5px solid #e2e8f0; color: #374151;
+      border-radius: 7px; font-size: 11px; font-weight: 600;
+      cursor: pointer; text-align: center; transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
     }
+    .btn-copy:hover { border-color: #16a34a; color: #15803d; background: #f0fdf4; }
 
-    .hsn-section .input-row input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1.5px solid #d1fae5;
-      border-radius: 8px;
-      font-size: 13px;
-      font-family: 'Courier New', monospace;
-      color: #1a2e1a;
-      background: #f9fafb;
-      outline: none;
-      transition: border-color 0.2s;
+    /* ── HSN Quick Tiles ─────────────────────────────────── */
+    .hsn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .hsn-tile {
+      background: #f8fafc; border: 1px solid #e2e8f0;
+      border-radius: 8px; padding: 8px 10px; cursor: pointer;
+      transition: all 0.15s;
     }
+    .hsn-tile:hover { border-color: #16a34a; background: #f0fdf4; }
+    .hsn-tile .ht-code { font-size: 10px; color: #64748b; font-family: monospace; }
+    .hsn-tile .ht-name { font-size: 11px; font-weight: 600; color: #0f172a; margin: 1px 0; }
+    .hsn-tile .ht-rate { font-size: 13px; font-weight: 800; color: #16a34a; }
 
-    .hsn-section .input-row input:focus { border-color: #16a34a; background: white; }
-
-    .hsn-section .input-row input::placeholder {
-      font-family: -apple-system, sans-serif;
-      font-size: 12px;
-      color: #9ca3af;
+    /* ── HSN Input ───────────────────────────────────────── */
+    .hsn-row { display: flex; gap: 7px; }
+    .hsn-row input {
+      flex: 1; padding: 10px 12px;
+      border: 1.5px solid #e2e8f0; border-radius: 8px;
+      font-size: 13px; font-family: 'Courier New', monospace;
+      color: #0f172a; background: #f8fafc;
+      outline: none; transition: border-color 0.2s;
     }
-
-    .check-btn-sm {
-      padding: 10px 16px;
-      background: #16a34a;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.2s;
+    .hsn-row input:focus { border-color: #16a34a; background: white; }
+    .hsn-row input::placeholder { font-family: -apple-system, sans-serif; font-size: 11px; color: #94a3b8; }
+    .btn-check {
+      padding: 10px 14px; background: #0f172a; color: white;
+      border: none; border-radius: 8px; font-size: 12px;
+      font-weight: 700; cursor: pointer; transition: background 0.15s; white-space: nowrap;
     }
-
-    .check-btn-sm:hover { background: #15803d; }
-
-    .razorpay-section {
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 14px;
-      text-align: center;
-    }
-
-    .razorpay-section h3 {
-      color: white;
-      font-size: 14px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-
-    .razorpay-section p {
-      color: #94a3b8;
-      font-size: 11px;
-      margin-bottom: 12px;
-    }
-
-    .price-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      margin-bottom: 12px;
-    }
-
-    .price {
-      color: #4ade80;
-      font-size: 28px;
-      font-weight: 800;
-    }
-
-    .price-sub {
-      color: #64748b;
-      font-size: 12px;
-    }
-
-    .razorpay-btn {
-      display: inline-block;
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      color: white;
-      padding: 11px 24px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 700;
-      text-decoration: none;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 0.2px;
-      box-shadow: 0 3px 10px rgba(37,99,235,0.4);
-    }
-
-    .razorpay-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 5px 15px rgba(37,99,235,0.5);
-    }
-
-    .features-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-bottom: 12px;
-      justify-content: center;
-    }
-
-    .feature-tag {
-      background: rgba(255,255,255,0.08);
-      color: #cbd5e1;
-      font-size: 10px;
-      padding: 3px 8px;
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .toast {
-      position: fixed;
-      bottom: 16px;
-      left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: #1f2937;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 12px;
-      opacity: 0;
-      transition: all 0.3s;
-      pointer-events: none;
-      white-space: nowrap;
-      z-index: 999;
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    .hidden { display: none; }
-
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .btn-check:hover { background: #1e293b; }
 
     #hsn-result { display: none; margin-top: 12px; }
 
-    .divider {
-      border: none;
-      border-top: 1px solid #f3f4f6;
-      margin: 12px 0;
+    /* ── Tax Calc ─────────────────────────────────────────── */
+    .calc-row { display: flex; gap: 7px; align-items: center; margin-bottom: 9px; }
+    .calc-row input {
+      flex: 1; padding: 9px 12px;
+      border: 1.5px solid #e2e8f0; border-radius: 8px;
+      font-size: 13px; color: #0f172a;
+      background: #f8fafc; outline: none;
+      transition: border-color 0.2s;
     }
+    .calc-row input:focus { border-color: #16a34a; background: white; }
+    .calc-divider { color: #64748b; font-size: 13px; flex-shrink: 0; }
+    .calc-result {
+      background: #f0fdf4; border: 1px solid #bbf7d0;
+      border-radius: 8px; padding: 10px 12px;
+      display: none; margin-top: 2px;
+    }
+    .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .calc-tile { background: white; border: 1px solid #e2e8f0; border-radius: 7px; padding: 7px 10px; }
+    .calc-tile .ct-label { font-size: 10px; color: #64748b; margin-bottom: 2px; }
+    .calc-tile .ct-val { font-size: 14px; font-weight: 800; color: #15803d; }
 
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      margin-top: 8px;
+    /* ── Upgrade ──────────────────────────────────────────── */
+    .upgrade-hero {
+      background: #0f172a;
+      border-radius: 10px; padding: 18px; text-align: center;
+      margin-bottom: 12px;
     }
+    .upgrade-hero h3 { color: white; font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+    .upgrade-hero p { color: #64748b; font-size: 11px; margin-bottom: 14px; }
+    .price-display { margin-bottom: 14px; }
+    .price-amount { color: #4ade80; font-size: 32px; font-weight: 900; }
+    .price-label { color: #475569; font-size: 11px; }
+    .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 14px; }
+    .feature-item {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 7px; padding: 6px 8px;
+      font-size: 10px; color: #94a3b8; font-weight: 500;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .feature-item .fi-check { color: #4ade80; font-weight: 700; }
+    .btn-pay {
+      display: block; width: 100%;
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: white; padding: 13px; border-radius: 9px;
+      font-size: 14px; font-weight: 800;
+      text-decoration: none; border: none; cursor: pointer;
+      text-align: center;
+      box-shadow: 0 4px 14px rgba(22,163,74,0.4);
+      transition: all 0.2s; letter-spacing: 0.2px;
+    }
+    .btn-pay:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(22,163,74,0.5); }
+    .trust-row {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      margin-top: 10px;
+    }
+    .trust-item { font-size: 10px; color: #475569; display: flex; align-items: center; gap: 4px; }
 
-    .info-tile {
-      background: #f0fdf4;
-      border-radius: 7px;
-      padding: 8px 10px;
+    /* ── Toast ───────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 14px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #0f172a; color: white;
+      padding: 8px 16px; border-radius: 8px;
+      font-size: 11px; font-weight: 500;
+      opacity: 0; transition: all 0.25s;
+      pointer-events: none; white-space: nowrap; z-index: 9999;
+      border: 1px solid rgba(255,255,255,0.08);
     }
-
-    .info-tile .label {
-      font-size: 10px;
-      color: #6b7280;
-      margin-bottom: 2px;
-    }
-
-    .info-tile .value {
-      font-size: 12px;
-      font-weight: 700;
-      color: #15803d;
-    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
+
+  <!-- Header -->
   <div class="header">
     <div class="header-left">
       <div class="logo">🧾</div>
       <div>
-        <h1>GST Copilot</h1>
-        <p>GSTIN · HSN · Tax Validator</p>
+        <div class="header-title">GST Copilot</div>
+        <div class="header-sub">Chartered Accountant Tool</div>
       </div>
     </div>
-    <div>
-      <div class="free-badge">Free Plan</div>
-      <div class="checks-counter" id="checks-counter">3 checks remaining</div>
+    <div class="header-right">
+      <div class="free-badge">FREE PLAN</div>
+      <div class="checks-bar" id="checks-counter">3 free checks remaining</div>
     </div>
   </div>
 
-  <div class="content">
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('gstin')">GSTIN</button>
+    <button class="tab" onclick="switchTab('hsn')">HSN / SAC</button>
+    <button class="tab" onclick="switchTab('calc')">Tax Calc</button>
+    <button class="tab" onclick="switchTab('upgrade')">Pro ↑</button>
+  </div>
 
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('gstin')">GSTIN</button>
-      <button class="tab" onclick="switchTab('hsn')">HSN / Tax</button>
-      <button class="tab" onclick="switchTab('upgrade')">Upgrade</button>
-    </div>
+  <!-- ═══ GSTIN TAB ═══════════════════════════════════════ -->
+  <div class="tab-content active" id="tab-gstin">
 
-    <!-- GSTIN TAB -->
-    <div class="tab-content active" id="tab-gstin">
-      <div class="section">
-        <div class="section-title">Validate GSTIN</div>
-        <div class="input-group">
-          <input type="text" id="gstin-input" placeholder="e.g. 27AAPFU0939F1ZV" maxlength="15" />
-          <button class="extract-btn" id="extract-btn" onclick="extractFromPage()">⚡ Extract</button>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">GSTIN Validator</span>
+        <span class="pill pill-blue">GSTZen API</span>
+      </div>
+      <div class="card-body">
+        <div class="input-wrap">
+          <input type="text" id="gstin-input" placeholder="Enter 15-digit GSTIN (e.g. 27AAPFU0939F1ZV)" maxlength="15" />
+          <div class="input-actions">
+            <button class="btn-sm btn-extract" id="extract-btn" onclick="extractFromPage()">⚡ Extract</button>
+          </div>
         </div>
-        <button class="validate-btn" id="validate-btn" onclick="validateGSTIN()">
+        <button class="btn-primary" id="validate-btn" onclick="validateGSTIN()">
           Validate GSTIN
         </button>
       </div>
+    </div>
 
-      <div id="results">
-        <div class="result-card" id="gstin-result-card">
-          <div class="result-header">
-            <span class="result-title">GSTIN Details</span>
-            <span class="status-badge valid" id="gstin-status">Valid</span>
+    <!-- Results -->
+    <div id="results">
+
+      <!-- GSTIN Details Card -->
+      <div class="card" id="gstin-result-card">
+        <div class="card-header">
+          <span class="card-title">Registration Details</span>
+          <span class="pill pill-green" id="gstin-status">Active</span>
+        </div>
+        <div class="card-body">
+          <div class="result-row">
+            <span class="r-label">GSTIN</span>
+            <span class="r-value green" id="res-gstin">—</span>
           </div>
           <div class="result-row">
-            <span class="result-label">GSTIN</span>
-            <span class="result-value highlight" id="res-gstin">—</span>
+            <span class="r-label">Legal Name</span>
+            <span class="r-value" id="res-name">—</span>
           </div>
           <div class="result-row">
-            <span class="result-label">Legal Name</span>
-            <span class="result-value" id="res-name">—</span>
+            <span class="r-label">Trade Name</span>
+            <span class="r-value" id="res-trade">—</span>
           </div>
           <div class="result-row">
-            <span class="result-label">Trade Name</span>
-            <span class="result-value" id="res-trade">—</span>
+            <span class="r-label">State / Code</span>
+            <span class="r-value" id="res-state">—</span>
           </div>
           <div class="result-row">
-            <span class="result-label">State</span>
-            <span class="result-value" id="res-state">—</span>
+            <span class="r-label">Filing Status</span>
+            <span class="r-value green" id="res-status">—</span>
           </div>
           <div class="result-row">
-            <span class="result-label">Status</span>
-            <span class="result-value highlight" id="res-status">—</span>
+            <span class="r-label">Taxpayer Type</span>
+            <span class="r-value" id="res-type">—</span>
           </div>
           <div class="result-row">
-            <span class="result-label">Taxpayer Type</span>
-            <span class="result-value" id="res-type">—</span>
+            <span class="r-label">Registration Date</span>
+            <span class="r-value" id="res-date">—</span>
           </div>
           <div class="result-row">
-            <span class="result-label">Registration Date</span>
-            <span class="result-value" id="res-date">—</span>
+            <span class="r-label">PAN</span>
+            <span class="r-value blue" id="res-pan">—</span>
           </div>
         </div>
+      </div>
 
-        <div class="result-card" id="tax-mismatch-card">
-          <div class="result-header">
-            <span class="result-title">⚠ Tax Rate Check</span>
-            <span class="status-badge warning" id="tax-status">Mismatch</span>
+      <!-- Tax Rate Mismatch Card -->
+      <div class="card" id="tax-mismatch-card" style="display:none">
+        <div class="card-header">
+          <span class="card-title">Tax Rate Analysis</span>
+          <span class="pill pill-amber" id="tax-status">Mismatch Detected</span>
+        </div>
+        <div class="card-body">
+          <div class="result-row">
+            <span class="r-label">Rate Charged</span>
+            <span class="r-value red" id="charged-rate">18%</span>
           </div>
           <div class="result-row">
-            <span class="result-label">Charged Rate</span>
-            <span class="result-value alert" id="charged-rate">18%</span>
+            <span class="r-label">Correct Rate</span>
+            <span class="r-value green" id="correct-rate">12%</span>
           </div>
           <div class="result-row">
-            <span class="result-label">Correct Rate</span>
-            <span class="result-value highlight" id="correct-rate">12%</span>
-          </div>
-          <div class="result-row">
-            <span class="result-label">Overcharge</span>
-            <span class="result-value alert" id="overcharge-amt">6%</span>
+            <span class="r-label">Excess Charged</span>
+            <span class="r-value red" id="overcharge-amt">+6%</span>
           </div>
 
-          <div class="dispute-box" id="dispute-text">
-            <strong>Dispute Text:</strong><br/>
-            <span id="dispute-content">As per GST notification, HSN [code] falls under 12% tax slab. You have incorrectly charged 18%. I request a revised invoice with the correct tax rate of 12%, or a refund of the excess 6% GST charged.</span>
+          <div class="dispute-box">
+            <div class="dispute-label">📋 Legal Dispute Notice</div>
+            <span id="dispute-content"></span>
           </div>
-          <button class="copy-btn" onclick="copyDispute()">📋 Copy Dispute Text</button>
+          <button class="btn-copy" onclick="copyDispute()">
+            <span>⎘</span> Copy Dispute Notice
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ HSN TAB ═════════════════════════════════════════ -->
+  <div class="tab-content" id="tab-hsn">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">HSN / SAC Lookup</span>
+        <span class="pill pill-green">Local DB</span>
+      </div>
+      <div class="card-body">
+        <div class="hsn-row">
+          <input type="text" id="hsn-input" placeholder="Enter HSN code (e.g. 8471, 3004)" maxlength="8" />
+          <button class="btn-check" onclick="checkHSN()">Look up</button>
         </div>
       </div>
     </div>
 
-    <!-- HSN TAB -->
-    <div class="tab-content" id="tab-hsn">
-      <div class="section hsn-section">
-        <div class="section-title">HSN / SAC Code Lookup</div>
-        <div class="input-row">
-          <input type="text" id="hsn-input" placeholder="Enter HSN/SAC code (e.g. 8471)" maxlength="8" />
-          <button class="check-btn-sm" onclick="checkHSN()">Check</button>
+    <div id="hsn-result">
+      <div class="card" id="hsn-result-card">
+        <div class="card-header">
+          <span class="card-title">HSN Details</span>
+          <span class="pill pill-green" id="hsn-status-badge">Found</span>
         </div>
-      </div>
-
-      <div id="hsn-result">
-        <div class="result-card" id="hsn-result-card">
-          <div class="result-header">
-            <span class="result-title">HSN Details</span>
-            <span class="status-badge valid" id="hsn-status-badge">Found</span>
+        <div class="card-body">
+          <div class="result-row">
+            <span class="r-label">HSN Code</span>
+            <span class="r-value green" id="hsn-code-res">—</span>
           </div>
           <div class="result-row">
-            <span class="result-label">HSN Code</span>
-            <span class="result-value highlight" id="hsn-code-res">—</span>
+            <span class="r-label">Description</span>
+            <span class="r-value" id="hsn-desc" style="font-family:inherit;font-size:11px;">—</span>
           </div>
           <div class="result-row">
-            <span class="result-label">Description</span>
-            <span class="result-value" id="hsn-desc">—</span>
+            <span class="r-label">GST Rate</span>
+            <span class="r-value green" style="font-size:14px;font-weight:800" id="hsn-rate">—</span>
           </div>
           <div class="result-row">
-            <span class="result-label">GST Rate</span>
-            <span class="result-value highlight" id="hsn-rate">—</span>
+            <span class="r-label">IGST</span>
+            <span class="r-value" id="hsn-igst">—</span>
           </div>
           <div class="result-row">
-            <span class="result-label">IGST</span>
-            <span class="result-value" id="hsn-igst">—</span>
+            <span class="r-label">CGST + SGST</span>
+            <span class="r-value" id="hsn-cgst">—</span>
           </div>
           <div class="result-row">
-            <span class="result-label">CGST + SGST</span>
-            <span class="result-value" id="hsn-cgst">—</span>
-          </div>
-          <div class="result-row">
-            <span class="result-label">Category</span>
-            <span class="result-value" id="hsn-cat">—</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">Common HSN Quick Checks</div>
-        <div class="info-grid">
-          <div class="info-tile" onclick="quickHSN('8471')">
-            <div class="label">Computers</div>
-            <div class="value">8471 → 18%</div>
-          </div>
-          <div class="info-tile" onclick="quickHSN('9403')">
-            <div class="label">Furniture</div>
-            <div class="value">9403 → 18%</div>
-          </div>
-          <div class="info-tile" onclick="quickHSN('0901')">
-            <div class="label">Coffee/Tea</div>
-            <div class="value">0901 → 5%</div>
-          </div>
-          <div class="info-tile" onclick="quickHSN('3004')">
-            <div class="label">Medicines</div>
-            <div class="value">3004 → 12%</div>
-          </div>
-          <div class="info-tile" onclick="quickHSN('6101')">
-            <div class="label">Garments</div>
-            <div class="value">6101 → 12%</div>
-          </div>
-          <div class="info-tile" onclick="quickHSN('4901')">
-            <div class="label">Books</div>
-            <div class="value">4901 → 0%</div>
+            <span class="r-label">Category</span>
+            <span class="r-value blue" id="hsn-cat">—</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- UPGRADE TAB -->
-    <div class="tab-content" id="tab-upgrade">
-      <div class="razorpay-section">
-        <h3>Unlock GST Copilot Pro</h3>
-        <p>Unlimited checks · Bulk GSTIN · Export PDF</p>
-        <div class="features-list">
-          <span class="feature-tag">✓ Unlimited GSTIN</span>
-          <span class="feature-tag">✓ Bulk CSV Upload</span>
-          <span class="feature-tag">✓ PDF Reports</span>
-          <span class="feature-tag">✓ Auto HSN Lookup</span>
-          <span class="feature-tag">✓ Priority Support</span>
-          <span class="feature-tag">✓ Tax Dispute Kit</span>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Quick Reference</span></div>
+      <div class="card-body" style="padding-top:10px">
+        <div class="hsn-grid">
+          <div class="hsn-tile" onclick="quickHSN('8471')">
+            <div class="ht-code">8471</div><div class="ht-name">Computers</div><div class="ht-rate">18%</div>
+          </div>
+          <div class="hsn-tile" onclick="quickHSN('3004')">
+            <div class="ht-code">3004</div><div class="ht-name">Medicines</div><div class="ht-rate">12%</div>
+          </div>
+          <div class="hsn-tile" onclick="quickHSN('6101')">
+            <div class="ht-code">6101</div><div class="ht-name">Garments</div><div class="ht-rate">12%</div>
+          </div>
+          <div class="hsn-tile" onclick="quickHSN('0901')">
+            <div class="ht-code">0901</div><div class="ht-name">Coffee / Tea</div><div class="ht-rate">5%</div>
+          </div>
+          <div class="hsn-tile" onclick="quickHSN('4901')">
+            <div class="ht-code">4901</div><div class="ht-name">Books</div><div class="ht-rate">0%</div>
+          </div>
+          <div class="hsn-tile" onclick="quickHSN('8703')">
+            <div class="ht-code">8703</div><div class="ht-name">Cars</div><div class="ht-rate">28%</div>
+          </div>
         </div>
-        <div class="price-row">
-          <span class="price">₹499</span>
-          <span class="price-sub">one-time</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAX CALCULATOR TAB ════════════════════════════════ -->
+  <div class="tab-content" id="tab-calc">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">GST Calculator</span>
+        <span class="pill pill-blue">Inclusive / Exclusive</span>
+      </div>
+      <div class="card-body">
+        <div style="margin-bottom:8px">
+          <div style="font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Amount &amp; Rate</div>
+          <div class="calc-row">
+            <input type="number" id="calc-amount" placeholder="Enter amount (₹)" min="0" />
+            <span class="calc-divider">@</span>
+            <input type="number" id="calc-rate" placeholder="Rate %" min="0" max="100" style="max-width:80px" />
+          </div>
         </div>
-        <a href="https://rzp.io/rzp/VPKO7Nvp" target="_blank" class="razorpay-btn">
-          💳 Pay ₹499 via Razorpay
-        </a>
+        <div style="display:flex;gap:7px;margin-bottom:10px">
+          <label style="font-size:11px;color:#374151;display:flex;align-items:center;gap:5px;cursor:pointer">
+            <input type="radio" name="calc-type" value="exclusive" checked /> Exclusive (add tax)
+          </label>
+          <label style="font-size:11px;color:#374151;display:flex;align-items:center;gap:5px;cursor:pointer">
+            <input type="radio" name="calc-type" value="inclusive" /> Inclusive (extract tax)
+          </label>
+        </div>
+        <button class="btn-primary" onclick="calculateTax()">Calculate GST</button>
+        <div class="calc-result" id="calc-result">
+          <div class="calc-grid">
+            <div class="calc-tile"><div class="ct-label">Taxable Amount</div><div class="ct-val" id="cr-taxable">—</div></div>
+            <div class="calc-tile"><div class="ct-label">GST Amount</div><div class="ct-val" id="cr-gst">—</div></div>
+            <div class="calc-tile"><div class="ct-label">CGST (½)</div><div class="ct-val" id="cr-cgst">—</div></div>
+            <div class="calc-tile"><div class="ct-label">SGST (½)</div><div class="ct-val" id="cr-sgst">—</div></div>
+          </div>
+          <div class="result-row" style="margin-top:10px;padding-top:8px;border-top:1px solid #e2e8f0">
+            <span class="r-label" style="font-weight:700;color:#0f172a">Total (with GST)</span>
+            <span class="r-value green" style="font-size:15px;font-weight:800" id="cr-total">—</span>
+          </div>
+          <div class="result-row" style="padding-top:4px">
+            <span class="r-label">IGST (interstate)</span>
+            <span class="r-value" id="cr-igst">—</span>
+          </div>
+        </div>
       </div>
     </div>
 
   </div>
 
+  <!-- ═══ UPGRADE TAB ═══════════════════════════════════════ -->
+  <div class="tab-content" id="tab-upgrade">
+    <div class="upgrade-hero">
+      <h3>GST Copilot Pro</h3>
+      <p>For practicing Chartered Accountants &amp; tax consultants</p>
+      <div class="price-display">
+        <div class="price-amount">₹499</div>
+        <div class="price-label">one-time · lifetime access</div>
+      </div>
+      <div class="features-grid">
+        <div class="feature-item"><span class="fi-check">✓</span> Unlimited GSTIN</div>
+        <div class="feature-item"><span class="fi-check">✓</span> Bulk CSV Upload</div>
+        <div class="feature-item"><span class="fi-check">✓</span> PDF Reports</div>
+        <div class="feature-item"><span class="fi-check">✓</span> Full HSN Database</div>
+        <div class="feature-item"><span class="fi-check">✓</span> Auto Page Scan</div>
+        <div class="feature-item"><span class="fi-check">✓</span> Dispute Kit</div>
+      </div>
+      <a href="https://rzp.io/rzp/VPKO7Nvp" target="_blank" class="btn-pay">
+        Upgrade for ₹499 — Razorpay →
+      </a>
+      <div class="trust-row">
+        <div class="trust-item">🔒 Secure Payment</div>
+        <div class="trust-item">🇮🇳 Made in India</div>
+        <div class="trust-item">💳 UPI / Cards</div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
+
   <script src="popup.js"></script>
 </body>
 </html>
