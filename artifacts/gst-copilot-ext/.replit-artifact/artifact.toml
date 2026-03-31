@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "GST Copilot Extension"
+version = "1.0.0"
+id = "artifacts/gst-copilot-ext"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23563
+
+[services.development]
+run = "pnpm --filter @workspace/gst-copilot-ext run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/gst-copilot-ext", "run", "build" ]
+publicDir = "artifacts/gst-copilot-ext/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23563"
+BASE_PATH = "/"
