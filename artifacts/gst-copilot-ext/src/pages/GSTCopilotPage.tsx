@@ -188,8 +188,8 @@ export default function GSTCopilotPage() {
             </div>
           </div>
           <p className="text-slate-300 text-sm">
-            Replace <code className="bg-slate-700 text-green-400 px-1.5 py-0.5 rounded text-xs">[PASTE YOUR RAZORPAY URL]</code> in{" "}
-            <code className="bg-slate-700 text-green-400 px-1.5 py-0.5 rounded text-xs">popup.html</code> with your Razorpay payment link to enable in-extension purchases.
+            The Razorpay payment link (<code className="bg-slate-700 text-green-400 px-1.5 py-0.5 rounded text-xs">rzp.io/rzp/VPKO7Nvp</code>) is already wired into the{" "}
+            <code className="bg-slate-700 text-green-400 px-1.5 py-0.5 rounded text-xs">popup.html</code> upgrade button and ready to accept payments.
           </p>
         </div>
 
