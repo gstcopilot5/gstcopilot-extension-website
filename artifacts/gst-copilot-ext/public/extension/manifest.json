@@ -10,6 +10,7 @@
   ],
   "host_permissions": [
     "https://api.gstzen.in/*",
+    "https://e0915252-d539-4a59-8808-3df47d3b08ed-00-fh2jo8edcz1x.spock.replit.dev/*",
     "<all_urls>"
   ],
   "action": {

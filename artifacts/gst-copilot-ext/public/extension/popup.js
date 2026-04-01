@@ -66,9 +66,11 @@ function entityType(code) {
            '4': 'Company', '5': 'Public Co.', '6': 'Govt.' }[code] || 'Private Ltd.';
 }
 
-// ── GSTZen API fetch ───────────────────────────────────────────────────────
-async function fetchGSTZen(gstin) {
-  const res = await fetch('https://api.gstzen.in/taxpayers/' + gstin, {
+// ── Custom API fetch ───────────────────────────────────────────────────────
+const VALIDATE_API_BASE = 'https://e0915252-d539-4a59-8808-3df47d3b08ed-00-fh2jo8edcz1x.spock.replit.dev/api/validate-gstin/';
+
+async function fetchValidateAPI(gstin) {
+  const res = await fetch(VALIDATE_API_BASE + gstin, {
     headers: { 'Content-Type': 'application/json' }
   });
   if (!res.ok) throw new Error('API ' + res.status);
@@ -103,23 +105,37 @@ async function validateGSTIN() {
 
   const btn = document.getElementById('validate-btn');
   btn.disabled = true;
-  btn.innerHTML = '<div class="loader"></div>Validating via GSTZen...';
+  btn.innerHTML = '<div class="loader"></div>Validating...';
 
   try {
     let data;
     try {
-      const api = await fetchGSTZen(gstin);
+      const api = await fetchValidateAPI(gstin);
+
+      // Normalise response — support various field name conventions
+      const companyName =
+        api.company_name || api.companyName || api.legalName ||
+        api.legal_name  || api.tradeName   || api.trade_name ||
+        api.tradeNam    || api.name         || 'N/A';
+
+      const status =
+        api.status       || api.gstin_status || api.gstinStatus ||
+        api.sts          || api.filing_status || 'Active';
+
       data = {
-        legalName: api.legalName || api.tradeNam || api.legal_name || 'N/A',
-        tradeName: api.tradeName || api.trade_name || api.tradeNam || 'N/A',
-        state: api.stj || api.state || STATE_CODES[gstin.substring(0, 2)] || 'N/A',
-        status: api.sts || api.status || 'Active',
-        taxpayerType: api.dty || api.taxpayerType || 'Regular',
-        registrationDate: api.rgdt || api.regDate || 'N/A',
-        pan: gstin.substring(2, 12)
+        legalName:        companyName,
+        tradeName:        api.tradeName || api.trade_name || api.tradeNam || companyName,
+        state:            api.state || api.stj || STATE_CODES[gstin.substring(0, 2)] || 'N/A',
+        status:           status,
+        taxpayerType:     api.taxpayerType || api.dty || api.type || 'Regular',
+        registrationDate: api.registrationDate || api.rgdt || api.reg_date || 'N/A',
+        pan:              api.pan || gstin.substring(2, 12),
+        _source:          'api'
       };
-    } catch {
+    } catch (apiErr) {
+      // Fallback to mock data if API is unreachable
       data = getMockData(gstin);
+      data._apiError = apiErr.message;
     }
     consumeCheck();
     showResult(true, data, gstin, null);
@@ -153,8 +169,8 @@ function showResult(isValid, data, gstin, errorMsg) {
   }
 
   card.style.borderColor = '';
-  statusBadge.textContent = data._isMock ? 'Valid (Demo)' : 'Active';
-  statusBadge.className = 'pill pill-green';
+  statusBadge.textContent = data._isMock ? 'Demo Data' : (data.status || 'Active');
+  statusBadge.className = data._isMock ? 'pill pill-amber' : 'pill pill-green';
 
   const p = parseGSTIN(gstin);
   document.getElementById('res-gstin').textContent = gstin;
