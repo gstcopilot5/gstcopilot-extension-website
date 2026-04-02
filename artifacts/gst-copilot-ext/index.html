@@ -80,20 +80,34 @@
 
     .pricing { background: var(--green-xlight); }
     .pricing-header { text-align: center; margin-bottom: 48px; }
-    .pricing-card-wrap { display: flex; justify-content: center; }
-    .pricing-card { background: white; border: 2px solid var(--green); border-radius: 20px; padding: 40px; max-width: 440px; width: 100%; text-align: center; position: relative; box-shadow: 0 8px 40px rgba(22,163,74,0.15); }
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 1000px; margin: 0 auto; }
+    .pricing-card { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 36px 28px; text-align: center; position: relative; transition: all 0.25s; }
+    .pricing-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(22,163,74,0.12); }
+    .pricing-card.featured { border: 2px solid var(--green); box-shadow: 0 8px 40px rgba(22,163,74,0.18); }
     .pricing-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--green), var(--green-dark)); color: white; padding: 4px 18px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; }
-    .pricing-name { font-size: 13px; font-weight: 600; color: var(--green); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px; }
-    .pricing-price { margin-bottom: 6px; }
-    .pricing-amount { font-size: 52px; font-weight: 900; color: var(--slate); letter-spacing: -2px; }
-    .pricing-period { font-size: 16px; color: var(--muted); font-weight: 500; }
-    .pricing-desc { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
-    .pricing-features { text-align: left; margin-bottom: 30px; display: flex; flex-direction: column; gap: 10px; }
+    .pricing-name { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px; }
+    .pricing-name.free { color: var(--muted); }
+    .pricing-name.starter { color: var(--green); }
+    .pricing-name.pro { color: #7c3aed; }
+    .pricing-price { margin-bottom: 4px; }
+    .pricing-amount { font-size: 48px; font-weight: 900; color: var(--slate); letter-spacing: -2px; }
+    .pricing-amount.free-amt { font-size: 36px; }
+    .pricing-period { font-size: 15px; color: var(--muted); font-weight: 500; }
+    .pricing-desc { font-size: 13px; color: var(--muted); margin: 8px 0 24px; line-height: 1.5; }
+    .pricing-features { text-align: left; margin-bottom: 24px; display: flex; flex-direction: column; gap: 9px; }
     .pf-item { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); }
+    .pf-item.dim { color: var(--muted); }
     .pf-check { width: 20px; height: 20px; background: var(--green-light); color: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; }
-    .btn-buy { display: block; width: 100%; background: linear-gradient(135deg, var(--green), var(--green-dark)); color: white; padding: 15px; border-radius: 10px; font-size: 16px; font-weight: 800; box-shadow: 0 4px 16px rgba(22,163,74,0.4); transition: all 0.2s; }
-    .btn-buy:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(22,163,74,0.5); }
-    .pricing-note { font-size: 12px; color: var(--muted); margin-top: 14px; }
+    .pf-check.purple { background: #ede9fe; color: #7c3aed; }
+    .pf-cross { width: 20px; height: 20px; background: #f1f5f9; color: #94a3b8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; }
+    .btn-buy { display: block; width: 100%; color: white; padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 800; transition: all 0.2s; }
+    .btn-buy.green { background: linear-gradient(135deg, var(--green), var(--green-dark)); box-shadow: 0 4px 16px rgba(22,163,74,0.35); }
+    .btn-buy.green:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(22,163,74,0.5); }
+    .btn-buy.purple { background: linear-gradient(135deg, #7c3aed, #6d28d9); box-shadow: 0 4px 16px rgba(124,58,237,0.35); }
+    .btn-buy.purple:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(124,58,237,0.5); }
+    .btn-try { display: block; width: 100%; background: white; color: var(--slate); padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 700; border: 2px solid var(--border); transition: all 0.2s; }
+    .btn-try:hover { border-color: var(--green); color: var(--green); transform: translateY(-2px); }
+    .pricing-note { font-size: 12px; color: var(--muted); margin-top: 12px; }
 
     footer { background: var(--slate); color: #94a3b8; padding: 40px 24px; text-align: center; }
     .footer-inner { max-width: 1100px; margin: 0 auto; }
@@ -129,7 +143,7 @@
         </a>
         <span class="tagline-header">AI-Powered GST Assistant for Chartered Accountants</span>
       </div>
-      <a href="https://e0915252-d539-4a59-8808-3df47d3b08ed-00-fh2jo8edcz1x.spock.replit.dev/api/pay" class="header-cta">Get Pro — ₹499</a>
+      <a href="https://rzp.io/rzp/p0sMNdF2" class="header-cta">Get Started — ₹499</a>
     </div>
   </header>
 
@@ -139,7 +153,7 @@
       <h1>Save <span class="accent">4 Hours</span> Every Week<br/>on GST Work</h1>
       <p class="hero-sub">Instant GSTIN verification, ITC mismatch detection, and GSTR reconciliation — right inside your Chrome browser. Built exclusively for Chartered Accountants.</p>
       <div class="hero-buttons">
-        <a href="https://e0915252-d539-4a59-8808-3df47d3b08ed-00-fh2jo8edcz1x.spock.replit.dev/api/pay" class="btn-hero">🚀 Get GSTCopilot for ₹499/month</a>
+        <a href="https://rzp.io/rzp/p0sMNdF2" class="btn-hero">🚀 Get GSTCopilot — Starts at ₹499/month</a>
         <a href="#how-it-works" class="btn-hero-outline">See how it works →</a>
       </div>
       <div class="hero-trust">
@@ -229,32 +243,78 @@
     <div class="section-inner">
       <div class="pricing-header">
         <div class="section-label">Pricing</div>
-        <h2>Simple, honest pricing</h2>
-        <p class="section-sub" style="margin:0 auto">One plan, full access, no hidden fees. Built for solo CAs and small firms.</p>
+        <h2>Plans for every CA practice</h2>
+        <p class="section-sub" style="margin:0 auto">Start free, scale as you grow. No hidden fees. Cancel anytime.</p>
       </div>
-      <div class="pricing-card-wrap">
+
+      <div class="pricing-grid">
+
+        <!-- FREE -->
         <div class="pricing-card">
+          <div class="pricing-name free">Free</div>
+          <div class="pricing-price">
+            <span class="pricing-amount free-amt">₹0</span>
+            <span class="pricing-period">/month</span>
+          </div>
+          <p class="pricing-desc">Try GSTCopilot at no cost. No card required.</p>
+          <div class="pricing-features">
+            <div class="pf-item"><div class="pf-check">✓</div> 5 GSTIN checks/month</div>
+            <div class="pf-item"><div class="pf-check">✓</div> HSN code lookup</div>
+            <div class="pf-item"><div class="pf-check">✓</div> Tax rate calculator</div>
+            <div class="pf-item dim"><div class="pf-cross">✕</div> ITC mismatch checker</div>
+            <div class="pf-item dim"><div class="pf-cross">✕</div> GSTR reconciliation</div>
+            <div class="pf-item dim"><div class="pf-cross">✕</div> Auto-detect on page</div>
+            <div class="pf-item dim"><div class="pf-cross">✕</div> PDF &amp; Excel export</div>
+          </div>
+          <a href="/gst-copilot-extension.zip" class="btn-try">⬇ Try Free — Download</a>
+          <p class="pricing-note">Install extension and start immediately</p>
+        </div>
+
+        <!-- STARTER -->
+        <div class="pricing-card featured">
           <div class="pricing-badge">MOST POPULAR</div>
-          <div class="pricing-name">GSTCopilot Pro</div>
+          <div class="pricing-name starter">Starter</div>
           <div class="pricing-price">
             <span class="pricing-amount">₹499</span>
             <span class="pricing-period">/month</span>
           </div>
-          <p class="pricing-desc">Full access to all features. Cancel anytime.</p>
+          <p class="pricing-desc">Perfect for solo CAs managing up to 50 clients.</p>
           <div class="pricing-features">
-            <div class="pf-item"><div class="pf-check">✓</div> Unlimited GSTIN validations</div>
+            <div class="pf-item"><div class="pf-check">✓</div> 300 GSTIN checks/month</div>
             <div class="pf-item"><div class="pf-check">✓</div> ITC mismatch checker (GSTR-2B)</div>
             <div class="pf-item"><div class="pf-check">✓</div> GSTR-1 / 3B reconciliation</div>
             <div class="pf-item"><div class="pf-check">✓</div> HSN code lookup (18,000+ codes)</div>
-            <div class="pf-item"><div class="pf-check">✓</div> Auto-detect GSTIN on any page</div>
+            <div class="pf-item"><div class="pf-check">✓</div> Auto-detect GSTIN on page</div>
             <div class="pf-item"><div class="pf-check">✓</div> 1-click dispute text generator</div>
             <div class="pf-item"><div class="pf-check">✓</div> Tax rate calculator</div>
-            <div class="pf-item"><div class="pf-check">✓</div> PDF &amp; Excel export</div>
-            <div class="pf-item"><div class="pf-check">✓</div> Priority email support</div>
+            <div class="pf-item dim"><div class="pf-cross">✕</div> PDF &amp; Excel export</div>
           </div>
-          <a href="https://e0915252-d539-4a59-8808-3df47d3b08ed-00-fh2jo8edcz1x.spock.replit.dev/api/pay" class="btn-buy">💳 Buy Now — ₹499/month</a>
+          <a href="https://rzp.io/rzp/p0sMNdF2" class="btn-buy green">💳 Buy Now — ₹499/month</a>
           <p class="pricing-note">🔒 Secure payment via Razorpay · UPI / Cards / Net Banking</p>
         </div>
+
+        <!-- PRO -->
+        <div class="pricing-card">
+          <div class="pricing-name pro">Pro</div>
+          <div class="pricing-price">
+            <span class="pricing-amount">₹999</span>
+            <span class="pricing-period">/month</span>
+          </div>
+          <p class="pricing-desc">For high-volume CA firms handling 100+ clients.</p>
+          <div class="pricing-features">
+            <div class="pf-item"><div class="pf-check purple">✓</div> Unlimited GSTIN checks</div>
+            <div class="pf-item"><div class="pf-check purple">✓</div> ITC mismatch checker (GSTR-2B)</div>
+            <div class="pf-item"><div class="pf-check purple">✓</div> GSTR-1 / 3B reconciliation</div>
+            <div class="pf-item"><div class="pf-check purple">✓</div> HSN code lookup (18,000+ codes)</div>
+            <div class="pf-item"><div class="pf-check purple">✓</div> Auto-detect GSTIN on page</div>
+            <div class="pf-item"><div class="pf-check purple">✓</div> 1-click dispute text generator</div>
+            <div class="pf-item"><div class="pf-check purple">✓</div> Tax rate calculator</div>
+            <div class="pf-item"><div class="pf-check purple">✓</div> PDF &amp; Excel export</div>
+          </div>
+          <a href="https://rzp.io/rzp/ZVfD4KEC" class="btn-buy purple">💳 Buy Now — ₹999/month</a>
+          <p class="pricing-note">🔒 Secure payment via Razorpay · UPI / Cards / Net Banking</p>
+        </div>
+
       </div>
     </div>
   </section>
