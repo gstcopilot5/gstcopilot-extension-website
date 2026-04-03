@@ -282,6 +282,77 @@
     }
     .trust-item { font-size: 10px; color: #475569; display: flex; align-items: center; gap: 4px; }
 
+    /* ── Server / error note ─────────────────────────────── */
+    .server-note {
+      display: none;
+      background: #fefce8; border: 1px solid #fde047;
+      border-radius: 8px; padding: 8px 12px;
+      font-size: 11px; color: #78350f; line-height: 1.55;
+      margin-bottom: 10px;
+    }
+    .server-note::before { content: '⚠️ '; }
+
+    /* ── Limit banner ────────────────────────────────────── */
+    .limit-banner {
+      display: none;
+      background: #fef2f2; border: 1px solid #fecaca;
+      border-radius: 10px; padding: 10px 12px;
+      margin: 0 14px 10px;
+      align-items: flex-start; gap: 10px;
+    }
+    .limit-banner-icon { font-size: 18px; flex-shrink: 0; line-height: 1.2; }
+    .limit-banner-body { flex: 1; }
+    .limit-banner-title { font-size: 12px; font-weight: 700; color: #dc2626; margin-bottom: 2px; }
+    .limit-banner-msg { font-size: 11px; color: #7f1d1d; line-height: 1.5; }
+    .limit-banner-btn {
+      display: inline-block; margin-top: 7px;
+      background: #dc2626; color: white;
+      padding: 5px 12px; border-radius: 6px;
+      font-size: 11px; font-weight: 700; cursor: pointer;
+      border: none; transition: background 0.15s;
+    }
+    .limit-banner-btn:hover { background: #b91c1c; }
+
+    /* ── License key section ─────────────────────────────── */
+    .license-section {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px; padding: 14px; margin-top: 14px;
+    }
+    .license-section-title {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.6px;
+      text-transform: uppercase; color: #64748b; margin-bottom: 10px;
+    }
+    .license-row { display: flex; gap: 6px; margin-bottom: 8px; }
+    .license-row input {
+      flex: 1; padding: 9px 12px;
+      background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px; font-size: 12px;
+      color: white; font-family: 'Courier New', monospace;
+      outline: none; transition: border-color 0.2s; letter-spacing: 0.5px;
+    }
+    .license-row input:focus { border-color: #16a34a; }
+    .license-row input::placeholder { font-family: -apple-system,sans-serif; letter-spacing: 0; color: #475569; font-size: 11px; }
+    .btn-verify {
+      padding: 9px 14px; background: rgba(22,163,74,0.2);
+      border: 1px solid rgba(22,163,74,0.4); color: #4ade80;
+      border-radius: 8px; font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .btn-verify:hover { background: rgba(22,163,74,0.3); }
+    .btn-verify:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-spin {
+      display: inline-block; width: 11px; height: 11px;
+      border: 2px solid rgba(74,222,128,0.3); border-top-color: #4ade80;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    .license-status {
+      font-size: 11px; border-radius: 7px;
+      padding: 7px 10px; margin-top: 2px; display: none; line-height: 1.5;
+    }
+    .license-status-error { background: rgba(239,68,68,0.1); color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); display: block; }
+    .license-status-success { background: rgba(34,197,94,0.1); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); display: block; }
+
     /* ── Toast ───────────────────────────────────────────── */
     .toast {
       position: fixed; bottom: 14px; left: 50%;
@@ -292,8 +363,12 @@
       opacity: 0; transition: all 0.25s;
       pointer-events: none; white-space: nowrap; z-index: 9999;
       border: 1px solid rgba(255,255,255,0.08);
+      max-width: 340px; text-align: center; white-space: normal;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast-error  { background: #1c0a0a; border-color: rgba(239,68,68,0.4); color: #fca5a5; }
+    .toast-success { background: #0a1c10; border-color: rgba(34,197,94,0.4); color: #4ade80; }
+    .toast-info   { background: #0f172a; border-color: rgba(255,255,255,0.1); color: #e2e8f0; }
   </style>
 </head>
 <body>
@@ -321,6 +396,16 @@
     <button class="tab" onclick="switchTab('upgrade')">Pro ↑</button>
   </div>
 
+  <!-- Limit banner (shown when monthly limit hit) -->
+  <div class="limit-banner" id="limit-banner">
+    <div class="limit-banner-icon">🚫</div>
+    <div class="limit-banner-body">
+      <div class="limit-banner-title">Monthly limit reached!</div>
+      <div class="limit-banner-msg">You've used all your free checks this month. Upgrade to Pro for unlimited GSTIN validations.</div>
+      <button class="limit-banner-btn" onclick="openPricing()">Upgrade to Pro →</button>
+    </div>
+  </div>
+
   <!-- ═══ GSTIN TAB ═══════════════════════════════════════ -->
   <div class="tab-content active" id="tab-gstin">
 
@@ -344,6 +429,9 @@
 
     <!-- Results -->
     <div id="results">
+
+      <!-- Server/offline note (shown when falling back to demo data) -->
+      <div class="server-note" id="server-note"></div>
 
       <!-- GSTIN Details Card -->
       <div class="card" id="gstin-result-card">
@@ -569,6 +657,16 @@
         <div class="trust-item">🔒 Secure Payment</div>
         <div class="trust-item">🇮🇳 Made in India</div>
         <div class="trust-item">💳 UPI / Cards</div>
+      </div>
+
+      <!-- License key section -->
+      <div class="license-section">
+        <div class="license-section-title">Already have a license key?</div>
+        <div class="license-row">
+          <input type="text" id="license-input" placeholder="Paste your license key here" spellcheck="false" autocomplete="off" />
+          <button class="btn-verify" id="license-btn" onclick="verifyLicense()">Activate</button>
+        </div>
+        <div class="license-status" id="license-status"></div>
       </div>
     </div>
   </div>

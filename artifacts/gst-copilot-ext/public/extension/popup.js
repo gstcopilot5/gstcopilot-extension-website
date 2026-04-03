@@ -1,6 +1,13 @@
-// GST Copilot Pro - popup.js
+// GST Copilot Pro — popup.js
 
-const FREE_CHECKS_LIMIT = 3;
+// ── Constants ─────────────────────────────────────────────────────────────
+const FREE_CHECKS_LIMIT = 5;
+const VALIDATE_API_BASE = 'https://e0915252-d539-4a59-8808-3df47d3b08ed-00-fh2jo8edcz1x.spock.replit.dev/api/validate-gstin/';
+const LICENSE_API       = 'https://e0915252-d539-4a59-8808-3df47d3b08ed-00-fh2jo8edcz1x.spock.replit.dev/api/auth/verify-license';
+const PRICING_URL       = 'https://gst-copilot-ext.replit.app/#pricing';
+const TIMEOUT_MS        = 12000;
+
+// ── Checks counter ────────────────────────────────────────────────────────
 let checksUsed = parseInt(localStorage.getItem('gst_checks_used') || '0');
 updateChecksDisplay();
 
@@ -12,7 +19,7 @@ function updateChecksDisplay() {
     el.textContent = remaining + ' free check' + (remaining === 1 ? '' : 's') + ' remaining';
     el.style.color = '#475569';
   } else {
-    el.textContent = 'Upgrade for unlimited';
+    el.textContent = '0 checks remaining';
     el.style.color = '#f87171';
   }
 }
@@ -24,7 +31,27 @@ function consumeCheck() {
   updateChecksDisplay();
 }
 
-// ── Tab switching ──────────────────────────────────────────────────────────
+// ── Toast (supports type: 'error' | 'success' | 'info') ──────────────────
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.className = 'toast show toast-' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.classList.remove('show'); }, type === 'error' ? 4000 : 2500);
+}
+
+// ── Limit-reached banner ──────────────────────────────────────────────────
+function showLimitBanner() {
+  const banner = document.getElementById('limit-banner');
+  if (banner) banner.style.display = 'flex';
+}
+function hideLimitBanner() {
+  const banner = document.getElementById('limit-banner');
+  if (banner) banner.style.display = 'none';
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────
 function switchTab(tab) {
   const tabs = ['gstin', 'hsn', 'calc', 'upgrade'];
   document.querySelectorAll('.tab').forEach((t, i) => {
@@ -35,7 +62,7 @@ function switchTab(tab) {
   if (el) el.classList.add('active');
 }
 
-// ── State codes ────────────────────────────────────────────────────────────
+// ── State codes ───────────────────────────────────────────────────────────
 const STATE_CODES = {
   '01':'J&K','02':'Himachal Pradesh','03':'Punjab','04':'Chandigarh',
   '05':'Uttarakhand','06':'Haryana','07':'Delhi','08':'Rajasthan',
@@ -44,7 +71,8 @@ const STATE_CODES = {
   '17':'Meghalaya','18':'Assam','19':'West Bengal','20':'Jharkhand',
   '21':'Odisha','22':'Chhattisgarh','23':'Madhya Pradesh','24':'Gujarat',
   '27':'Maharashtra','28':'Andhra Pradesh','29':'Karnataka','30':'Goa',
-  '32':'Kerala','33':'Tamil Nadu','34':'Puducherry','36':'Telangana','37':'Andhra Pradesh (New)'
+  '32':'Kerala','33':'Tamil Nadu','34':'Puducherry','36':'Telangana',
+  '37':'Andhra Pradesh (New)'
 };
 
 function isValidGSTIN(gstin) {
@@ -66,22 +94,30 @@ function entityType(code) {
            '4': 'Company', '5': 'Public Co.', '6': 'Govt.' }[code] || 'Private Ltd.';
 }
 
-// ── Custom API fetch ───────────────────────────────────────────────────────
-const VALIDATE_API_BASE = 'https://e0915252-d539-4a59-8808-3df47d3b08ed-00-fh2jo8edcz1x.spock.replit.dev/api/validate-gstin/';
+// ── Fetch with timeout ────────────────────────────────────────────────────
+function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(id));
+}
 
+// ── API call ──────────────────────────────────────────────────────────────
 async function fetchValidateAPI(gstin) {
-  const res = await fetch(VALIDATE_API_BASE + gstin, {
+  const res = await fetchWithTimeout(VALIDATE_API_BASE + gstin, {
     headers: { 'Content-Type': 'application/json' }
   });
-  if (!res.ok) throw new Error('API ' + res.status);
+  if (res.status === 429) throw Object.assign(new Error('limit_exceeded'), { code: 'LIMIT' });
+  if (!res.ok) throw Object.assign(new Error('server_error_' + res.status), { code: 'SERVER' });
   return res.json();
 }
 
+// ── Mock fallback ─────────────────────────────────────────────────────────
 function getMockData(gstin) {
   const p = parseGSTIN(gstin);
   const state = STATE_CODES[p.stateCode] || 'Unknown';
-  const names = ['Bharat Tech Solutions Pvt Ltd','Sunrise Enterprises','Apex Traders LLP',
-                  'National Commerce Co','Vrindavan Industries'];
+  const names = ['Bharat Tech Solutions Pvt Ltd', 'Sunrise Enterprises',
+                  'Apex Traders LLP', 'National Commerce Co', 'Vrindavan Industries'];
   const name = names[parseInt(p.stateCode) % names.length];
   return {
     legalName: name, tradeName: name.split(' ')[0] + ' Traders',
@@ -91,32 +127,53 @@ function getMockData(gstin) {
   };
 }
 
-// ── Validate GSTIN ─────────────────────────────────────────────────────────
+// ── Classify error ────────────────────────────────────────────────────────
+function classifyError(err) {
+  if (err.code === 'LIMIT')  return 'limit';
+  if (err.name === 'AbortError') return 'timeout';
+  if (!navigator.onLine)     return 'offline';
+  if (err.code === 'SERVER') return 'server';
+  // Failed to fetch = network unreachable
+  if (err.message && (err.message.includes('fetch') || err.message.includes('network'))) return 'network';
+  return 'unknown';
+}
+
+// ── Validate GSTIN ────────────────────────────────────────────────────────
 async function validateGSTIN() {
   const input = document.getElementById('gstin-input');
   const gstin = input.value.trim().toUpperCase();
 
-  if (!gstin) { showToast('Enter a GSTIN number'); return; }
+  if (!gstin) { showToast('Please enter a GSTIN number', 'error'); return; }
   if (!isValidGSTIN(gstin)) {
-    showResult(false, null, gstin, 'Invalid format. GSTIN must be 15 characters: 2 digits + 5 letters + 4 digits + 1 letter + 1 alphanumeric + Z + 1 alphanumeric.');
+    showResult(false, null, gstin, 'Invalid format — a GSTIN must be 15 characters (2 digits + 5 letters + 4 digits + 1 letter + 1 alphanumeric + Z + 1 alphanumeric).');
     return;
   }
-  if (!canCheck()) { switchTab('upgrade'); showToast('Free limit reached — Upgrade for unlimited checks'); return; }
+
+  // Monthly limit check
+  if (!canCheck()) {
+    showLimitBanner();
+    showResult(false, null, gstin, 'Monthly limit reached. Upgrade to Pro for unlimited GSTIN checks.');
+    showToast('Monthly limit reached — upgrade for unlimited checks', 'error');
+    return;
+  }
 
   const btn = document.getElementById('validate-btn');
+  const origText = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<div class="loader"></div>Validating...';
+  btn.innerHTML = '<div class="loader"></div>Validating…';
+  hideLimitBanner();
 
   try {
     let data;
+    let usingFallback = false;
+
     try {
       const api = await fetchValidateAPI(gstin);
 
-      // Normalise response — support various field name conventions
       const companyName =
         api.company_name || api.companyName || api.legalName ||
-        api.legal_name  || api.tradeName   || api.trade_name ||
-        api.tradeNam    || api.name         || 'N/A';
+        api.legal_name   || api.tradeName   || api.trade_name ||
+        api.tradeNam     || api.name         || 'N/A';
 
       const status =
         api.status       || api.gstin_status || api.gstinStatus ||
@@ -133,25 +190,46 @@ async function validateGSTIN() {
         _source:          'api'
       };
     } catch (apiErr) {
-      // Fallback to mock data if API is unreachable
+      const kind = classifyError(apiErr);
+
+      if (kind === 'limit') {
+        showLimitBanner();
+        showResult(false, null, gstin, 'Monthly limit reached. Upgrade to Pro for unlimited GSTIN checks.');
+        showToast('Monthly limit reached!', 'error');
+        return;
+      }
+
+      // Network / server issues → fall back to demo data with status badge
+      usingFallback = true;
       data = getMockData(gstin);
-      data._apiError = apiErr.message;
+      data._errorKind = kind;
+
+      if (kind === 'timeout' || kind === 'offline' || kind === 'network') {
+        showToast('Server temporarily offline — showing demo data', 'error');
+      } else {
+        showToast('Could not validate GSTIN — showing demo data', 'error');
+      }
     }
+
     consumeCheck();
     showResult(true, data, gstin, null);
-  } catch (err) {
-    showResult(false, null, gstin, 'Validation failed. Please try again.');
+
+  } catch (outerErr) {
+    showResult(false, null, gstin, 'Could not validate GSTIN. Please try again.');
+    showToast('Validation failed. Please try again.', 'error');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = 'Validate GSTIN';
+    btn.innerHTML = origText;
   }
 }
 
+// ── Show Result ───────────────────────────────────────────────────────────
 function showResult(isValid, data, gstin, errorMsg) {
-  const resultsDiv = document.getElementById('results');
-  const card = document.getElementById('gstin-result-card');
-  const statusBadge = document.getElementById('gstin-status');
-  const taxCard = document.getElementById('tax-mismatch-card');
+  const resultsDiv   = document.getElementById('results');
+  const card         = document.getElementById('gstin-result-card');
+  const statusBadge  = document.getElementById('gstin-status');
+  const serverNote   = document.getElementById('server-note');
+  const taxCard      = document.getElementById('tax-mismatch-card');
 
   resultsDiv.style.display = 'block';
 
@@ -159,34 +237,59 @@ function showResult(isValid, data, gstin, errorMsg) {
     card.style.borderColor = '#fecaca';
     statusBadge.textContent = 'Invalid';
     statusBadge.className = 'pill pill-red';
-    document.getElementById('res-gstin').textContent = gstin;
-    document.getElementById('res-name').textContent = errorMsg || 'Invalid';
+    document.getElementById('res-gstin').textContent = gstin || '—';
+    document.getElementById('res-name').textContent = errorMsg || 'Validation failed';
     ['res-trade','res-state','res-status','res-type','res-date','res-pan'].forEach(id => {
       document.getElementById(id).textContent = '—';
     });
+    if (serverNote) serverNote.style.display = 'none';
     taxCard.style.display = 'none';
     return;
   }
 
   card.style.borderColor = '';
-  statusBadge.textContent = data._isMock ? 'Demo Data' : (data.status || 'Active');
-  statusBadge.className = data._isMock ? 'pill pill-amber' : 'pill pill-green';
+
+  // Status badge — live / demo / amber
+  if (data._isMock) {
+    statusBadge.textContent = 'Demo Data';
+    statusBadge.className = 'pill pill-amber';
+  } else {
+    const s = (data.status || 'Active').toLowerCase();
+    statusBadge.textContent = data.status || 'Active';
+    statusBadge.className = s === 'active' || s === 'registered' ? 'pill pill-green' : 'pill pill-amber';
+  }
+
+  // Server note (shown only for fallback data)
+  if (serverNote) {
+    if (data._isMock) {
+      const msgs = {
+        timeout:  'GSTCopilot server is temporarily offline. Please try again in a few minutes.',
+        offline:  'GSTCopilot server is temporarily offline. Please try again in a few minutes.',
+        network:  'GSTCopilot server is temporarily offline. Please try again in a few minutes.',
+        server:   'Could not validate GSTIN. Showing estimated data — please try again.',
+        unknown:  'Could not reach validation server. Showing estimated data.'
+      };
+      serverNote.textContent = msgs[data._errorKind] || msgs.unknown;
+      serverNote.style.display = 'block';
+    } else {
+      serverNote.style.display = 'none';
+    }
+  }
 
   const p = parseGSTIN(gstin);
-  document.getElementById('res-gstin').textContent = gstin;
-  document.getElementById('res-name').textContent = data.legalName;
-  document.getElementById('res-trade').textContent = data.tradeName;
-  document.getElementById('res-state').textContent = (data.state || STATE_CODES[p.stateCode] || '?') + ' · Code ' + p.stateCode;
+  document.getElementById('res-gstin').textContent  = gstin;
+  document.getElementById('res-name').textContent   = data.legalName;
+  document.getElementById('res-trade').textContent  = data.tradeName;
+  document.getElementById('res-state').textContent  = (data.state || STATE_CODES[p.stateCode] || '?') + ' · Code ' + p.stateCode;
   document.getElementById('res-status').textContent = data.status;
-  document.getElementById('res-type').textContent = data.taxpayerType;
-  document.getElementById('res-date').textContent = data.registrationDate;
-  document.getElementById('res-pan').textContent = data.pan || p.pan;
+  document.getElementById('res-type').textContent   = data.taxpayerType;
+  document.getElementById('res-date').textContent   = data.registrationDate;
+  document.getElementById('res-pan').textContent    = data.pan || p.pan;
 
-  // Tax mismatch (mock demo: 18% charged vs 12% correct)
   taxCard.style.display = 'block';
   const chargedRate = 18, correctRate = 12, diff = chargedRate - correctRate;
-  document.getElementById('charged-rate').textContent = chargedRate + '%';
-  document.getElementById('correct-rate').textContent = correctRate + '%';
+  document.getElementById('charged-rate').textContent  = chargedRate + '%';
+  document.getElementById('correct-rate').textContent  = correctRate + '%';
   document.getElementById('overcharge-amt').textContent = '+' + diff + '%';
   document.getElementById('dispute-content').textContent =
     `Dear ${data.legalName}, as per applicable GST notification, the correct GST rate for this supply is ${correctRate}%. ` +
@@ -195,22 +298,102 @@ function showResult(isValid, data, gstin, errorMsg) {
     `or refund the excess GST of ${diff}% collected.`;
 }
 
+// ── Copy dispute ──────────────────────────────────────────────────────────
 function copyDispute() {
   const text = document.getElementById('dispute-content').textContent;
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(() => showToast('Dispute notice copied to clipboard'));
+    navigator.clipboard.writeText(text)
+      .then(() => showToast('Dispute notice copied!', 'success'))
+      .catch(() => legacyCopy(text));
   } else {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('Copied!');
+    legacyCopy(text);
+  }
+}
+function legacyCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text; document.body.appendChild(ta);
+  ta.select(); document.execCommand('copy');
+  document.body.removeChild(ta);
+  showToast('Copied!', 'success');
+}
+
+// ── License key verification ──────────────────────────────────────────────
+async function verifyLicense() {
+  const input  = document.getElementById('license-input');
+  const btn    = document.getElementById('license-btn');
+  const status = document.getElementById('license-status');
+  if (!input || !btn || !status) return;
+
+  const key = input.value.trim();
+  if (!key) {
+    showStatus(status, 'Please enter your license key.', 'error');
+    return;
+  }
+
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-spin"></span> Verifying…';
+  showStatus(status, '', '');
+
+  try {
+    const res = await fetchWithTimeout(LICENSE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key })
+    });
+
+    const data = await res.json();
+
+    if (res.status === 404 || res.status === 401 || res.status === 403) {
+      showStatus(status, 'Invalid license key. Please check your email or contact support at gstcopilot@gmail.com', 'error');
+      return;
+    }
+    if (!res.ok) {
+      showStatus(status, 'Could not verify your key right now. Please try again in a moment.', 'error');
+      return;
+    }
+
+    // Success — store license
+    localStorage.setItem('gst_license_key', key);
+    localStorage.setItem('gst_license_plan', data.plan || 'starter');
+    localStorage.removeItem('gst_checks_used');
+    checksUsed = 0;
+    updateChecksDisplay();
+    hideLimitBanner();
+
+    showStatus(status, '✓ License activated! Your ' + (data.plan || 'Starter') + ' plan is now active.', 'success');
+    showToast('License activated successfully!', 'success');
+
+    // Update badge
+    const badge = document.querySelector('.free-badge');
+    if (badge) { badge.textContent = (data.plan || 'PRO').toUpperCase(); badge.style.color = '#4ade80'; }
+
+  } catch (err) {
+    const kind = classifyError(err);
+    if (kind === 'timeout' || kind === 'offline' || kind === 'network') {
+      showStatus(status, 'GSTCopilot server is temporarily offline. Please try again in a few minutes.', 'error');
+    } else {
+      showStatus(status, 'Invalid license key. Please check your email or contact support at gstcopilot@gmail.com', 'error');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
   }
 }
 
-// ── HSN database ───────────────────────────────────────────────────────────
+function showStatus(el, msg, type) {
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'license-status license-status-' + type;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+// ── Open upgrade page ─────────────────────────────────────────────────────
+function openPricing() {
+  chrome.tabs.create({ url: PRICING_URL });
+}
+
+// ── HSN database ──────────────────────────────────────────────────────────
 const HSN_DB = {
   '8471': { desc: 'Automatic data processing machines (computers, laptops)', rate: 18, cat: 'Electronics' },
   '8517': { desc: 'Telephone sets including smartphones and cellular handsets', rate: 18, cat: 'Electronics' },
@@ -230,7 +413,7 @@ const HSN_DB = {
 
 function checkHSN() {
   const code = document.getElementById('hsn-input').value.trim();
-  if (!code || code.length < 4) { showToast('Enter at least 4 digits'); return; }
+  if (!code || code.length < 4) { showToast('Please enter at least 4 digits', 'error'); return; }
 
   let found = null, foundCode = null;
   for (const [k, v] of Object.entries(HSN_DB)) {
@@ -238,7 +421,6 @@ function checkHSN() {
   }
 
   const resultDiv = document.getElementById('hsn-result');
-  const card = document.getElementById('hsn-result-card');
   resultDiv.style.display = 'block';
 
   if (!found) {
@@ -269,14 +451,14 @@ function quickHSN(code) {
   checkHSN();
 }
 
-// ── Tax Calculator ─────────────────────────────────────────────────────────
+// ── Tax Calculator ────────────────────────────────────────────────────────
 function calculateTax() {
   const amount = parseFloat(document.getElementById('calc-amount').value);
-  const rate = parseFloat(document.getElementById('calc-rate').value);
-  const type = document.querySelector('input[name="calc-type"]:checked').value;
+  const rate   = parseFloat(document.getElementById('calc-rate').value);
+  const type   = document.querySelector('input[name="calc-type"]:checked').value;
 
-  if (isNaN(amount) || amount <= 0) { showToast('Enter a valid amount'); return; }
-  if (isNaN(rate) || rate < 0 || rate > 100) { showToast('Enter a valid GST rate (0–100)'); return; }
+  if (isNaN(amount) || amount <= 0) { showToast('Please enter a valid amount', 'error'); return; }
+  if (isNaN(rate) || rate < 0 || rate > 100) { showToast('Please enter a valid GST rate (0–100)', 'error'); return; }
 
   let taxable, gstAmt;
   if (type === 'exclusive') {
@@ -288,22 +470,22 @@ function calculateTax() {
   }
 
   const total = taxable + gstAmt;
-  const half = gstAmt / 2;
-  const fmt = n => '₹' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const half  = gstAmt / 2;
+  const fmt   = n => '₹' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
   document.getElementById('cr-taxable').textContent = fmt(taxable);
-  document.getElementById('cr-gst').textContent = fmt(gstAmt);
-  document.getElementById('cr-cgst').textContent = fmt(half);
-  document.getElementById('cr-sgst').textContent = fmt(half);
-  document.getElementById('cr-total').textContent = fmt(total);
-  document.getElementById('cr-igst').textContent = fmt(gstAmt) + ' (interstate)';
+  document.getElementById('cr-gst').textContent     = fmt(gstAmt);
+  document.getElementById('cr-cgst').textContent    = fmt(half);
+  document.getElementById('cr-sgst').textContent    = fmt(half);
+  document.getElementById('cr-total').textContent   = fmt(total);
+  document.getElementById('cr-igst').textContent    = fmt(gstAmt) + ' (interstate)';
   document.getElementById('calc-result').style.display = 'block';
 }
 
-// ── Extract from page ──────────────────────────────────────────────────────
+// ── Extract from page ─────────────────────────────────────────────────────
 function extractFromPage() {
   const btn = document.getElementById('extract-btn');
-  btn.textContent = '...';
+  btn.textContent = '…';
   btn.disabled = true;
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -311,31 +493,28 @@ function extractFromPage() {
       btn.textContent = '⚡ Extract';
       btn.disabled = false;
       if (chrome.runtime.lastError || !response) {
-        showToast('Cannot read this page');
+        showToast('Cannot read this page', 'error');
         return;
       }
       if (response.gstin) {
         document.getElementById('gstin-input').value = response.gstin;
-        showToast('Extracted: ' + response.gstin);
+        showToast('Extracted: ' + response.gstin, 'success');
       } else {
-        showToast('No GSTIN found on page');
+        showToast('No GSTIN found on this page', 'info');
       }
     });
   });
 }
 
-// ── Toast ──────────────────────────────────────────────────────────────────
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-// ── Key listeners ──────────────────────────────────────────────────────────
+// ── Key listeners ─────────────────────────────────────────────────────────
 document.getElementById('gstin-input').addEventListener('keypress', e => { if (e.key === 'Enter') validateGSTIN(); });
 document.getElementById('gstin-input').addEventListener('input', e => {
   e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
 });
 document.getElementById('hsn-input').addEventListener('keypress', e => { if (e.key === 'Enter') checkHSN(); });
 document.getElementById('calc-amount').addEventListener('keypress', e => { if (e.key === 'Enter') calculateTax(); });
+
+const licenseInput = document.getElementById('license-input');
+if (licenseInput) {
+  licenseInput.addEventListener('keypress', e => { if (e.key === 'Enter') verifyLicense(); });
+}
