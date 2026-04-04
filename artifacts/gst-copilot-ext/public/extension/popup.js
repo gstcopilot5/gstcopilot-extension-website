@@ -233,6 +233,9 @@ function showResult(isValid, data, gstin, errorMsg) {
 
   resultsDiv.style.display = 'block';
 
+  const saveRow = document.getElementById('save-client-row');
+  const saveBtn = document.getElementById('save-client-btn');
+
   if (!isValid) {
     card.style.borderColor = '#fecaca';
     statusBadge.textContent = 'Invalid';
@@ -243,6 +246,7 @@ function showResult(isValid, data, gstin, errorMsg) {
       document.getElementById(id).textContent = '—';
     });
     if (serverNote) serverNote.style.display = 'none';
+    if (saveRow) saveRow.style.display = 'none';
     taxCard.style.display = 'none';
     return;
   }
@@ -286,6 +290,16 @@ function showResult(isValid, data, gstin, errorMsg) {
   document.getElementById('res-date').textContent   = data.registrationDate;
   document.getElementById('res-pan').textContent    = data.pan || p.pan;
 
+  // Show "Save to Clients" button only for live (non-mock) results
+  if (saveRow) {
+    if (!data._isMock) {
+      saveRow.style.display = 'flex';
+      if (saveBtn) { saveBtn.innerHTML = '💾 Save to Client List'; saveBtn.disabled = false; }
+    } else {
+      saveRow.style.display = 'none';
+    }
+  }
+
   taxCard.style.display = 'block';
   const chargedRate = 18, correctRate = 12, diff = chargedRate - correctRate;
   document.getElementById('charged-rate').textContent  = chargedRate + '%';
@@ -296,6 +310,29 @@ function showResult(isValid, data, gstin, errorMsg) {
     `You have charged ${chargedRate}% GST against GSTIN ${gstin}, resulting in an excess charge of ${diff}%. ` +
     `Under Section 31 of the CGST Act 2017, you are required to issue a revised tax invoice reflecting the correct rate of ${correctRate}%, ` +
     `or refund the excess GST of ${diff}% collected.`;
+}
+
+// ── Save current validated client to list ─────────────────────────────────
+function saveCurrentClient() {
+  const gstin = document.getElementById('res-gstin').textContent.trim();
+  const name  = document.getElementById('res-name').textContent.trim();
+  if (!gstin || gstin === '—') return;
+
+  chrome.storage.local.get('gst_clients', r => {
+    const list = r.gst_clients || [];
+    if (list.some(c => c.gstin === gstin)) {
+      showToast('Client already in your list', 'info');
+      const btn = document.getElementById('save-client-btn');
+      if (btn) { btn.innerHTML = '✓ Already saved'; btn.disabled = true; }
+      return;
+    }
+    list.unshift({ name: name && name !== '—' ? name : gstin, gstin, added: Date.now() });
+    chrome.storage.local.set({ gst_clients: list }, () => {
+      const btn = document.getElementById('save-client-btn');
+      if (btn) { btn.innerHTML = '✓ Saved!'; btn.disabled = true; }
+      showToast((name && name !== '—' ? name : gstin) + ' saved to client list', 'success');
+    });
+  });
 }
 
 // ── Copy dispute ──────────────────────────────────────────────────────────

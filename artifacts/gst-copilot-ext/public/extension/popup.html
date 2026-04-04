@@ -282,6 +282,22 @@
     }
     .trust-item { font-size: 10px; color: #475569; display: flex; align-items: center; gap: 4px; }
 
+    /* ── Save to clients row ─────────────────────────────── */
+    .save-client-row {
+      display:none; align-items:center; gap:10px;
+      margin-top:10px; padding-top:10px;
+      border-top:1px solid rgba(255,255,255,0.06);
+    }
+    .btn-save-client {
+      background:rgba(22,163,74,.15); border:1px solid rgba(22,163,74,.3);
+      color:#4ade80; border-radius:7px; font-size:11px; font-weight:700;
+      padding:6px 12px; cursor:pointer; transition:all .15s;
+      display:flex; align-items:center; gap:5px; white-space:nowrap;
+    }
+    .btn-save-client:hover { background:rgba(22,163,74,.25); }
+    .btn-save-client:disabled { opacity:.5; cursor:not-allowed; }
+    .save-client-note { font-size:10px; color:#475569; }
+
     /* ── Server / error note ─────────────────────────────── */
     .server-note {
       display: none;
@@ -471,6 +487,14 @@
           <div class="result-row">
             <span class="r-label">PAN</span>
             <span class="r-value blue" id="res-pan">—</span>
+          </div>
+
+          <!-- Save to client list -->
+          <div class="save-client-row" id="save-client-row">
+            <button class="btn-save-client" id="save-client-btn" onclick="saveCurrentClient()">
+              💾 Save to Client List
+            </button>
+            <span class="save-client-note">One-click autofill on any portal</span>
           </div>
         </div>
       </div>
