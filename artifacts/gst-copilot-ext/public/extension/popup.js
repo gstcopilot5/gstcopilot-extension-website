@@ -158,3 +158,37 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("license-btn")
     .addEventListener("click", verifyLicense);
 });
+// ================= TAB SWITCH =================
+function switchTab(tab) {
+  document.getElementById("gstin-section").style.display = "none";
+
+  // future sections (keep ready)
+  // document.getElementById("hsn-section").style.display = "none";
+  // document.getElementById("tax-section").style.display = "none";
+
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+
+  if (tab === "gstin") {
+    document.getElementById("gstin-section").style.display = "block";
+    document.getElementById("gstin-tab").classList.add("active");
+  }
+}
+
+// ================= EVENTS =================
+document.addEventListener("DOMContentLoaded", () => {
+
+  // Tabs
+  document.getElementById("gstin-tab")
+    ?.addEventListener("click", () => switchTab("gstin"));
+
+  document.getElementById("hsn-tab")
+    ?.addEventListener("click", () => alert("HSN coming soon"));
+
+  document.getElementById("tax-tab")
+    ?.addEventListener("click", () => alert("Tax calculator coming soon"));
+
+  // Extract
+  document.getElementById("extract-btn")
+    ?.addEventListener("click", extractFromPage);
+
+});
