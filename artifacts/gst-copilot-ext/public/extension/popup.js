@@ -1,5 +1,3 @@
-// GST Copilot Pro - Clean Production popup.js
-
 // ================= CONFIG =================
 const API_BASE = "https://gstcopilot-backend-1.onrender.com/api/validate-gstin/";
 const LICENSE_API = "https://gstcopilot-backend-1.onrender.com/api/verify-license";
@@ -24,6 +22,13 @@ function showToast(msg, type = "info") {
 function updateLimitUI() {
   const el = document.getElementById("checks-counter");
   if (!el) return;
+
+  const hasLicense = localStorage.getItem("gst_license_key");
+  if (hasLicense) {
+    el.innerText = "Pro Unlimited";
+    return;
+  }
+
   const left = Math.max(0, FREE_LIMIT - checksUsed);
   el.innerText = `${left} free checks left`;
 }
@@ -40,21 +45,33 @@ function canUse() {
 
 // ================= API =================
 async function fetchGST(gstin) {
-  const res = await fetch(API_BASE + gstin);
-  if (!res.ok) throw new Error("API error");
+  const licenseKey = localStorage.getItem("gst_license_key") || "free_user";
+
+  const res = await fetch(API_BASE + gstin, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "x-license-key": licenseKey
+    }
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "API error");
+  }
+
   return res.json();
 }
 
 // ================= VALIDATE =================
 async function validateGSTIN() {
-  const input = document.getElementById("gstin-input");
-  const gstin = input.value.trim().toUpperCase();
+  const gstin = document.getElementById("gstin-input").value.trim().toUpperCase();
 
   if (!gstin) return showToast("Enter GSTIN", "error");
   if (!isValidGSTIN(gstin)) return showToast("Invalid GSTIN", "error");
 
   if (!canUse()) {
-    showToast("Limit reached. Upgrade.", "error");
+    showToast("Free limit reached. Upgrade to Pro.", "error");
     return;
   }
 
@@ -70,19 +87,20 @@ async function validateGSTIN() {
       name: data.legalName || data.tradeName || "N/A",
       status: data.status || "Active",
       state: data.state || "N/A",
-      regDate: data.registrationDate || "N/A",
+      regDate: data.registrationDate || "N/A"
     });
 
     consumeCheck();
-  } catch (e) {
-    showToast("Server error", "error");
+
+  } catch (err) {
+    showToast(err.message || "Error", "error");
   } finally {
     btn.disabled = false;
     btn.innerText = "Validate";
   }
 }
 
-// ================= UI =================
+// ================= RESULT =================
 function showResult(data) {
   document.getElementById("results").style.display = "block";
 
@@ -96,25 +114,29 @@ function showResult(data) {
 // ================= LICENSE =================
 async function verifyLicense() {
   const key = document.getElementById("license-input").value.trim();
+
   if (!key) return showToast("Enter license key", "error");
 
   try {
     const res = await fetch(LICENSE_API, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key }),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ key })
     });
 
     const data = await res.json();
 
     if (!res.ok) {
-      showToast("Invalid key", "error");
-      return;
+      return showToast("Invalid license", "error");
     }
 
     localStorage.setItem("gst_license_key", key);
+
     showToast("Pro Activated", "success");
     updateLimitUI();
+
   } catch {
     showToast("Server error", "error");
   }
