@@ -8,7 +8,7 @@ let checksUsed = parseInt(localStorage.getItem("gst_checks_used") || "0");
 
 // ================= HELPERS =================
 function isValidGSTIN(gstin) {
-  return /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z][Z][0-9A-Z]$/.test(gstin);
+  return /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstin);
 }
 
 function showToast(msg, type = "info") {
@@ -24,8 +24,9 @@ function updateLimitUI() {
   if (!el) return;
 
   const hasLicense = localStorage.getItem("gst_license_key");
+
   if (hasLicense) {
-    el.innerText = "Pro Unlimited";
+    el.innerText = "Pro Plan Active";
     return;
   }
 
@@ -45,7 +46,7 @@ function canUse() {
 
 // ================= API =================
 async function fetchGST(gstin) {
-  const licenseKey = localStorage.getItem("gst_license_key") || "free_user";
+  const licenseKey = localStorage.getItem("gst_license_key") || "FREE";
 
   const res = await fetch(API_BASE + gstin, {
     method: "GET",
@@ -55,12 +56,13 @@ async function fetchGST(gstin) {
     }
   });
 
+  const data = await res.json();
+
   if (!res.ok) {
-    const data = await res.json();
     throw new Error(data.error || "API error");
   }
 
-  return res.json();
+  return data;
 }
 
 // ================= VALIDATE =================
@@ -133,7 +135,6 @@ async function verifyLicense() {
     }
 
     localStorage.setItem("gst_license_key", key);
-
     showToast("Pro Activated", "success");
     updateLimitUI();
 
@@ -147,13 +148,13 @@ document.addEventListener("DOMContentLoaded", () => {
   updateLimitUI();
 
   document.getElementById("validate-btn")
-    ?.addEventListener("click", validateGSTIN);
+    .addEventListener("click", validateGSTIN);
 
   document.getElementById("gstin-input")
-    ?.addEventListener("keypress", (e) => {
+    .addEventListener("keypress", (e) => {
       if (e.key === "Enter") validateGSTIN();
     });
 
   document.getElementById("license-btn")
-    ?.addEventListener("click", verifyLicense);
+    .addEventListener("click", verifyLicense);
 });
