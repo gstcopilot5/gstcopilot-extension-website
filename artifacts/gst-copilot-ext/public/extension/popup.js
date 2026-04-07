@@ -7,60 +7,42 @@ const FREE_LIMIT = 5;
 let checksUsed = parseInt(localStorage.getItem("gst_checks_used") || "0");
 
 // ================= HELPERS =================
-function isValidGSTIN(gstin) {
-  return /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstin);
-}
-
-function showToast(msg, type = "info") {
+function showToast(msg) {
   const el = document.getElementById("toast");
-  if (!el) return;
   el.innerText = msg;
-  el.className = "toast show " + type;
-  setTimeout(() => el.classList.remove("show"), 2500);
+  el.style.display = "block";
+  setTimeout(() => el.style.display = "none", 2000);
 }
 
 function updateLimitUI() {
-  const el = document.getElementById("checks-counter");
-  if (!el) return;
-
   const hasLicense = localStorage.getItem("gst_license_key");
-
-  if (hasLicense) {
-    el.innerText = "Pro Plan Active";
-    return;
-  }
+  if (hasLicense) return;
 
   const left = Math.max(0, FREE_LIMIT - checksUsed);
-  el.innerText = `${left} free checks left`;
+  showToast(left + " free checks left");
 }
 
 function consumeCheck() {
   checksUsed++;
   localStorage.setItem("gst_checks_used", checksUsed.toString());
-  updateLimitUI();
 }
 
 function canUse() {
   return checksUsed < FREE_LIMIT || localStorage.getItem("gst_license_key");
 }
 
-// ================= API =================
+// ================= GST FETCH =================
 async function fetchGST(gstin) {
-  const licenseKey = localStorage.getItem("gst_license_key") || "FREE";
+  const licenseKey = localStorage.getItem("gst_license_key") || "free_user";
 
   const res = await fetch(API_BASE + gstin, {
-    method: "GET",
     headers: {
-      "Content-Type": "application/json",
       "x-license-key": licenseKey
     }
   });
 
   const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || "API error");
-  }
+  if (!res.ok) throw new Error(data.error || "API error");
 
   return data;
 }
@@ -69,125 +51,66 @@ async function fetchGST(gstin) {
 async function validateGSTIN() {
   const gstin = document.getElementById("gstin-input").value.trim().toUpperCase();
 
-  if (!gstin) return showToast("Enter GSTIN", "error");
-  if (!isValidGSTIN(gstin)) return showToast("Invalid GSTIN", "error");
+  if (!gstin) return showToast("Enter GSTIN");
 
-  if (!canUse()) {
-    showToast("Free limit reached. Upgrade to Pro.", "error");
-    return;
-  }
-
-  const btn = document.getElementById("validate-btn");
-  btn.disabled = true;
-  btn.innerText = "Validating...";
+  if (!canUse()) return showToast("Limit reached");
 
   try {
     const data = await fetchGST(gstin);
 
-    showResult({
-      gstin,
-      name: data.legalName || data.tradeName || "N/A",
-      status: data.status || "Active",
-      state: data.state || "N/A",
-      regDate: data.registrationDate || "N/A"
-    });
+    document.getElementById("results").style.display = "block";
+    document.getElementById("res-gstin").innerText = data.gstin;
+    document.getElementById("res-name").innerText = data.legalName;
+    document.getElementById("res-status").innerText = data.status;
+    document.getElementById("res-state").innerText = data.state;
+    document.getElementById("res-date").innerText = data.registrationDate;
 
     consumeCheck();
 
   } catch (err) {
-    showToast(err.message || "Error", "error");
-  } finally {
-    btn.disabled = false;
-    btn.innerText = "Validate";
+    showToast(err.message);
   }
-}
-
-// ================= RESULT =================
-function showResult(data) {
-  document.getElementById("results").style.display = "block";
-
-  document.getElementById("res-gstin").innerText = data.gstin;
-  document.getElementById("res-name").innerText = data.name;
-  document.getElementById("res-status").innerText = data.status;
-  document.getElementById("res-state").innerText = data.state;
-  document.getElementById("res-date").innerText = data.regDate;
 }
 
 // ================= LICENSE =================
 async function verifyLicense() {
   const key = document.getElementById("license-input").value.trim();
 
-  if (!key) return showToast("Enter license key", "error");
+  if (!key) return showToast("Enter license");
 
   try {
     const res = await fetch(LICENSE_API, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key })
     });
 
     const data = await res.json();
 
-    if (!res.ok) {
-      return showToast("Invalid license", "error");
-    }
+    if (!data.ok) return showToast("Invalid license");
 
     localStorage.setItem("gst_license_key", key);
-    showToast("Pro Activated", "success");
-    updateLimitUI();
+    showToast("Pro Activated");
 
   } catch {
-    showToast("Server error", "error");
+    showToast("Server error");
   }
+}
+
+// ================= EXTRACT =================
+function extractFromPage() {
+  showToast("Coming soon");
 }
 
 // ================= EVENTS =================
 document.addEventListener("DOMContentLoaded", () => {
-  updateLimitUI();
 
   document.getElementById("validate-btn")
-    .addEventListener("click", validateGSTIN);
-
-  document.getElementById("gstin-input")
-    .addEventListener("keypress", (e) => {
-      if (e.key === "Enter") validateGSTIN();
-    });
+    ?.addEventListener("click", validateGSTIN);
 
   document.getElementById("license-btn")
-    .addEventListener("click", verifyLicense);
-});
-// ================= TAB SWITCH =================
-function switchTab(tab) {
-  document.getElementById("gstin-section").style.display = "none";
+    ?.addEventListener("click", verifyLicense);
 
-  // future sections (keep ready)
-  // document.getElementById("hsn-section").style.display = "none";
-  // document.getElementById("tax-section").style.display = "none";
-
-  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-
-  if (tab === "gstin") {
-    document.getElementById("gstin-section").style.display = "block";
-    document.getElementById("gstin-tab").classList.add("active");
-  }
-}
-
-// ================= EVENTS =================
-document.addEventListener("DOMContentLoaded", () => {
-
-  // Tabs
-  document.getElementById("gstin-tab")
-    ?.addEventListener("click", () => switchTab("gstin"));
-
-  document.getElementById("hsn-tab")
-    ?.addEventListener("click", () => alert("HSN coming soon"));
-
-  document.getElementById("tax-tab")
-    ?.addEventListener("click", () => alert("Tax calculator coming soon"));
-
-  // Extract
   document.getElementById("extract-btn")
     ?.addEventListener("click", extractFromPage);
 
