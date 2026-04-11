@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "GST Copilot",
+  "version": "1.0.0",
+  "description": "Validate GSTIN, check HSN codes, verify tax rates, and auto-detect GST info from web pages.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://api.gstzen.in/*",
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "GST Copilot"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}

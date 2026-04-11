@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GSTCopilot — Catch GST Errors Before They Cost You</title>
+  <meta name="description" content="Instantly verify GSTINs, detect ITC mismatches and reconcile GSTR — right inside Chrome. Built exclusively for Indian CAs." />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:       #22c55e;
+      --green-dark:  #16a34a;
+      --green-glow:  rgba(34,197,94,0.35);
+      --green-soft:  rgba(34,197,94,0.12);
+      --dark:        #030712;
+      --dark-2:      #0a0f1a;
+      --dark-3:      #0f172a;
+      --dark-4:      #1e293b;
+      --border:      rgba(255,255,255,0.08);
+      --text:        #f1f5f9;
+      --muted:       #64748b;
+      --muted-2:     #94a3b8;
+      --red-soft:    rgba(239,68,68,0.12);
+      --red-border:  rgba(239,68,68,0.3);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--text); background: var(--dark);
+      line-height: 1.6; overflow-x: hidden;
+    }
+    a { text-decoration: none; color: inherit; }
+    img { display: block; max-width: 100%; }
+
+    /* ── Scroll reveal ──────────────────────────────────────── */
+    .reveal {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* ── Sticky Header ──────────────────────────────────────── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9000;
+      background: rgba(3,7,18,0.85); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 24px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 800; font-size: 18px; letter-spacing: -0.4px;
+    }
+    .logo-icon {
+      width: 34px; height: 34px; background: var(--green);
+      border-radius: 9px; display: flex; align-items: center;
+      justify-content: center; font-size: 16px;
+    }
+    nav { display: flex; align-items: center; gap: 28px; }
+    nav a {
+      font-size: 14px; font-weight: 500; color: var(--muted-2);
+      transition: color 0.15s;
+    }
+    nav a:hover { color: var(--text); }
+    .btn-header {
+      background: var(--green); color: #000; font-weight: 700;
+      font-size: 14px; padding: 9px 20px; border-radius: 9px;
+      border: none; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-header:hover { background: #16a34a; transform: translateY(-1px); }
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+
+    /* ── Section wrapper ────────────────────────────────────── */
+    section { padding: 96px 24px; }
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    .section-tag {
+      display: inline-block; font-size: 12px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--green); background: var(--green-soft);
+      border: 1px solid rgba(34,197,94,0.25);
+      padding: 5px 14px; border-radius: 20px; margin-bottom: 18px;
+    }
+    .section-title {
+      font-size: clamp(28px, 5vw, 42px); font-weight: 800;
+      letter-spacing: -1px; line-height: 1.2; margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 17px; color: var(--muted-2);
+      max-width: 560px; line-height: 1.7;
+    }
+    .center { text-align: center; }
+    .center .section-sub { margin: 0 auto; }
+
+    /* ── Buttons ────────────────────────────────────────────── */
+    .btn-green {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--green); color: #000;
+      font-size: 15px; font-weight: 700; padding: 14px 28px;
+      border-radius: 11px; border: none; cursor: pointer;
+      transition: all 0.2s; white-space: nowrap;
+    }
+    .btn-green:hover { background: #16a34a; transform: translateY(-2px); box-shadow: 0 8px 24px var(--green-glow); }
+    .btn-dark {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--dark-4); color: var(--text);
+      font-size: 15px; font-weight: 600; padding: 14px 28px;
+      border-radius: 11px; border: 1px solid var(--border);
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .btn-dark:hover { background: var(--dark-3); transform: translateY(-2px); }
+
+    /* ── HERO ───────────────────────────────────────────────── */
+    #hero {
+      padding: 160px 24px 100px;
+      background: radial-gradient(ellipse 70% 50% at 50% -10%, rgba(34,197,94,0.1) 0%, transparent 70%);
+    }
+    #hero .container { max-width: 780px; text-align: center; }
+    .hero-headline {
+      font-size: clamp(36px, 6vw, 62px);
+      font-weight: 900; letter-spacing: -2px; line-height: 1.1;
+      margin-bottom: 22px;
+    }
+    .hero-headline span { color: var(--green); }
+    .hero-sub {
+      font-size: clamp(16px, 2vw, 19px); color: var(--muted-2);
+      max-width: 580px; margin: 0 auto 36px; line-height: 1.7;
+    }
+    .hero-ctas {
+      display: flex; align-items: center; justify-content: center;
+      gap: 14px; flex-wrap: wrap; margin-bottom: 32px;
+    }
+    .trust-line {
+      font-size: 13px; color: var(--muted); margin-bottom: 14px;
+    }
+    .trust-line span { color: var(--green); font-weight: 600; }
+    .hero-micro {
+      display: flex; align-items: center; justify-content: center;
+      gap: 20px; flex-wrap: wrap;
+    }
+    .hero-micro-item {
+      font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px;
+    }
+    .hero-micro-item::before { content: '✓'; color: var(--green); font-weight: 700; }
+
+    /* ── PAIN ───────────────────────────────────────────────── */
+    #pain { background: var(--dark-2); }
+    .pain-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px; margin-top: 48px;
+    }
+    .pain-card {
+      background: rgba(239,68,68,0.05); border: 1px solid var(--red-border);
+      border-radius: 16px; padding: 24px;
+    }
+    .pain-icon {
+      width: 44px; height: 44px; background: var(--red-soft);
+      border: 1px solid var(--red-border); border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 16px;
+    }
+    .pain-card h3 { font-size: 15px; font-weight: 700; line-height: 1.4; color: var(--text); }
+
+    /* ── FEATURES ───────────────────────────────────────────── */
+    #features { background: var(--dark); }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px; margin-top: 48px;
+    }
+    .feature-card {
+      background: var(--dark-3); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feature-card:hover { border-color: rgba(34,197,94,0.3); transform: translateY(-4px); }
+    .feature-icon {
+      width: 48px; height: 48px; background: var(--green-soft);
+      border: 1px solid rgba(34,197,94,0.25); border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 18px;
+    }
+    .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--muted-2); line-height: 1.65; }
+
+    /* ── DEMO ───────────────────────────────────────────────── */
+    #demo { background: var(--dark-2); }
+    .demo-box {
+      margin-top: 40px;
+      background: var(--dark-3); border: 1px solid var(--border);
+      border-radius: 20px; padding: 80px 40px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 18px;
+      text-align: center;
+    }
+    .play-btn {
+      width: 72px; height: 72px; background: var(--green);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 28px; cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 0 0 12px rgba(34,197,94,0.15);
+    }
+    .play-btn:hover { transform: scale(1.08); box-shadow: 0 0 0 16px rgba(34,197,94,0.12); }
+    .demo-label { font-size: 16px; font-weight: 600; color: var(--muted-2); }
+
+    /* ── HOW IT WORKS ───────────────────────────────────────── */
+    #how { background: var(--dark); }
+    .steps {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 32px; margin-top: 48px; position: relative;
+    }
+    .step { display: flex; align-items: flex-start; gap: 18px; }
+    .step-num {
+      width: 44px; height: 44px; background: var(--green);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 900; color: #000; flex-shrink: 0;
+    }
+    .step-body h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+    .step-body p { font-size: 14px; color: var(--muted-2); line-height: 1.6; }
+
+    /* ── PRICING ────────────────────────────────────────────── */
+    #pricing { background: var(--dark-2); }
+    .pricing-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px; margin-top: 48px; align-items: start;
+    }
+    .plan-card {
+      background: var(--dark-3); border: 1px solid var(--border);
+      border-radius: 20px; padding: 32px;
+      transition: transform 0.2s;
+    }
+    .plan-card:hover { transform: translateY(-4px); }
+    .plan-card.popular {
+      border: 2px solid var(--green);
+      position: relative;
+    }
+    .plan-card.pro {
+      border: 2px solid var(--green);
+      box-shadow: 0 0 0 1px var(--green-glow), 0 0 40px rgba(34,197,94,0.12), 0 0 80px rgba(34,197,94,0.06);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 0 1px var(--green-glow), 0 0 40px rgba(34,197,94,0.12); }
+      50%       { box-shadow: 0 0 0 1px var(--green-glow), 0 0 60px rgba(34,197,94,0.22); }
+    }
+    .popular-badge {
+      position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+      background: var(--green); color: #000; font-size: 11px; font-weight: 800;
+      padding: 4px 14px; border-radius: 20px; letter-spacing: 0.5px; white-space: nowrap;
+    }
+    .plan-name { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px; }
+    .plan-price {
+      font-size: 42px; font-weight: 900; letter-spacing: -2px;
+      color: var(--text); line-height: 1;
+    }
+    .plan-price sup { font-size: 22px; font-weight: 700; vertical-align: top; margin-top: 8px; margin-right: 2px; }
+    .plan-period { font-size: 13px; color: var(--muted); font-weight: 400; }
+    .plan-micro { font-size: 12px; color: var(--green); font-weight: 600; margin-top: 4px; }
+    .plan-divider { height: 1px; background: var(--border); margin: 22px 0; }
+    .plan-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+    .plan-features li {
+      font-size: 14px; color: var(--muted-2);
+      display: flex; align-items: flex-start; gap: 9px;
+    }
+    .plan-features li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+    .plan-features li.dim { color: var(--muted); }
+    .plan-features li.dim::before { color: var(--muted); content: '—'; }
+    .btn-plan {
+      width: 100%; padding: 13px; border-radius: 10px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      border: none; transition: all 0.2s;
+    }
+    .btn-plan-green { background: var(--green); color: #000; }
+    .btn-plan-green:hover { background: #16a34a; transform: translateY(-2px); }
+    .btn-plan-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-plan-outline:hover { background: var(--dark-4); }
+
+    /* ── TESTIMONIALS ───────────────────────────────────────── */
+    #testimonials { background: var(--dark); }
+    .testi-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px; margin-top: 48px;
+    }
+    .testi-card {
+      background: var(--dark-3); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px;
+    }
+    .stars { color: #f59e0b; font-size: 14px; margin-bottom: 14px; letter-spacing: 2px; }
+    .testi-text {
+      font-size: 15px; line-height: 1.7; color: var(--muted-2);
+      margin-bottom: 20px; font-style: italic;
+    }
+    .testi-text::before { content: '"'; }
+    .testi-text::after  { content: '"'; }
+    .testi-author { display: flex; align-items: center; gap: 12px; }
+    .testi-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--green-soft); border: 2px solid rgba(34,197,94,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 700; color: var(--green);
+    }
+    .testi-name { font-size: 14px; font-weight: 700; color: var(--text); }
+    .testi-loc  { font-size: 12px; color: var(--muted); }
+
+    /* ── FINAL CTA ──────────────────────────────────────────── */
+    #final-cta {
+      background: var(--dark-3);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+    #final-cta .section-title { margin-bottom: 12px; }
+    #final-cta .section-sub { margin: 0 auto 36px; }
+    .cta-meta { font-size: 13px; color: var(--muted); margin-top: 16px; }
+
+    /* ── FOOTER ─────────────────────────────────────────────── */
+    footer {
+      background: var(--dark); border-top: 1px solid var(--border);
+      padding: 40px 24px;
+    }
+    .footer-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 20px;
+    }
+    .footer-brand { display: flex; flex-direction: column; gap: 6px; }
+    .footer-brand .logo { font-size: 16px; }
+    .footer-tagline { font-size: 12px; color: var(--muted); }
+    .footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
+    .footer-links a { font-size: 13px; color: var(--muted); transition: color 0.15s; }
+    .footer-links a:hover { color: var(--text); }
+    .footer-copy { font-size: 12px; color: var(--muted); width: 100%; padding-top: 20px; border-top: 1px solid var(--border); }
+
+    /* ── Free Modal ─────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 99999;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal-box {
+      background: var(--dark-3); border: 1px solid var(--border);
+      border-radius: 20px; padding: 36px; max-width: 440px; width: 100%;
+      transform: translateY(20px); transition: transform 0.25s;
+    }
+    .modal-overlay.open .modal-box { transform: translateY(0); }
+    .modal-close {
+      position: absolute; top: 14px; right: 18px;
+      background: none; border: none; color: var(--muted);
+      font-size: 22px; cursor: pointer; line-height: 1;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-box { position: relative; }
+    .modal-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; }
+    .modal-sub { font-size: 14px; color: var(--muted-2); margin-bottom: 24px; line-height: 1.5; }
+    .modal-input {
+      width: 100%; padding: 13px 16px; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border); border-radius: 10px;
+      color: var(--text); font-size: 15px; outline: none;
+      transition: border-color 0.2s; margin-bottom: 14px; font-family: inherit;
+    }
+    .modal-input:focus { border-color: rgba(34,197,94,0.5); }
+    .modal-input::placeholder { color: var(--muted); }
+    .btn-modal-submit {
+      width: 100%; padding: 13px; background: var(--green); color: #000;
+      font-weight: 800; font-size: 15px; border: none; border-radius: 10px;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-modal-submit:hover { background: #16a34a; }
+    .btn-modal-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .modal-result {
+      display: none; margin-top: 18px;
+      background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25);
+      border-radius: 12px; padding: 18px;
+    }
+    .modal-result.show { display: block; }
+    .modal-result-label { font-size: 12px; color: var(--muted-2); margin-bottom: 4px; }
+    .modal-result-key {
+      font-family: 'Courier New', monospace; font-size: 18px; font-weight: 700;
+      color: var(--green); letter-spacing: 2px; word-break: break-all;
+    }
+    .modal-result-note { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+    .modal-error {
+      display: none; color: #f87171; font-size: 13px; margin-top: 8px;
+    }
+    .modal-error.show { display: block; }
+    .spin {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid rgba(0,0,0,0.25); border-top-color: #000;
+      border-radius: 50%; animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Toast ──────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--dark-3); color: var(--text);
+      padding: 10px 20px; border-radius: 10px; font-size: 14px;
+      font-weight: 500; opacity: 0; pointer-events: none;
+      transition: all 0.25s; z-index: 99998;
+      border: 1px solid var(--border); white-space: nowrap;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.toast-error  { border-color: rgba(239,68,68,0.4); color: #fca5a5; }
+    #toast.toast-success { border-color: rgba(34,197,94,0.4); color: #4ade80; }
+
+    /* ── Mobile ─────────────────────────────────────────────── */
+    .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 6px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; margin: 4px 0; transition: all 0.25s; }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .nav-links.open {
+        display: flex; flex-direction: column;
+        position: fixed; top: 64px; left: 0; right: 0;
+        background: var(--dark-2); border-bottom: 1px solid var(--border);
+        padding: 20px 24px; gap: 18px; z-index: 8999;
+      }
+      .hamburger { display: block; }
+      section { padding: 72px 20px; }
+      #hero { padding: 120px 20px 72px; }
+      .hero-headline { letter-spacing: -1.5px; }
+      .hero-ctas { flex-direction: column; }
+      .hero-ctas .btn-green, .hero-ctas .btn-dark { width: 100%; justify-content: center; }
+      .hero-micro { gap: 12px; }
+      .pain-grid, .features-grid { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; }
+      .testi-grid { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: 1fr; }
+      .footer-inner { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ STICKY HEADER ═══════════════════════════════════════════════════ -->
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">🧾</div>
+        GSTCopilot
+      </div>
+      <nav class="nav-links" id="nav-links">
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#how">How It Works</a>
+        <a href="/contact.html">Contact</a>
+        <button class="btn-header" onclick="openFreeModal()">Get Started Free</button>
+      </nav>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══ HERO ═══════════════════════════════════════════════════════════ -->
+  <section id="hero">
+    <div class="container">
+      <div class="section-tag reveal">Chrome Extension for CAs</div>
+      <h1 class="hero-headline reveal reveal-delay-1">
+        Catch GST Errors<br><span>Before They Cost You</span>
+      </h1>
+      <p class="hero-sub reveal reveal-delay-2">
+        Instantly verify GSTINs, detect ITC mismatches and reconcile GSTR — right inside Chrome. Built exclusively for Indian Chartered Accountants.
+      </p>
+      <div class="hero-ctas reveal reveal-delay-3">
+        <button class="btn-green" onclick="openFreeModal()">
+          ⚡ Try Free — No Card Required
+        </button>
+        <a href="#demo" class="btn-dark">
+          ▶ See How It Works
+        </a>
+      </div>
+      <p class="trust-line reveal reveal-delay-4">
+        Trusted by <span>Chartered Accountants</span> across India
+      </p>
+      <div class="hero-micro reveal reveal-delay-4">
+        <span class="hero-micro-item">No GST portal login required</span>
+        <span class="hero-micro-item">Works on any website</span>
+        <span class="hero-micro-item">License key delivered instantly</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ PAIN ════════════════════════════════════════════════════════════ -->
+  <section id="pain">
+    <div class="container">
+      <div class="center">
+        <div class="section-tag reveal">The Problem</div>
+        <h2 class="section-title reveal reveal-delay-1">Sound Familiar?</h2>
+        <p class="section-sub reveal reveal-delay-2">Every CA in India deals with these time-wasting frustrations, every single month.</p>
+      </div>
+      <div class="pain-grid">
+        <div class="pain-card reveal reveal-delay-1">
+          <div class="pain-icon">🔄</div>
+          <h3>Switching between 5 tabs just to verify one GSTIN</h3>
+        </div>
+        <div class="pain-card reveal reveal-delay-2">
+          <div class="pain-icon">❌</div>
+          <h3>Discovering ITC mismatches only after filing</h3>
+        </div>
+        <div class="pain-card reveal reveal-delay-3">
+          <div class="pain-icon">📊</div>
+          <h3>Spending hours on Excel reconciliation that could take minutes</h3>
+        </div>
+        <div class="pain-card reveal reveal-delay-4">
+          <div class="pain-icon">⚠️</div>
+          <h3>Missing errors that lead to costly penalties and notices</h3>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FEATURES ════════════════════════════════════════════════════════ -->
+  <section id="features">
+    <div class="container">
+      <div class="center">
+        <div class="section-tag reveal">Features</div>
+        <h2 class="section-title reveal reveal-delay-1">Everything You Need,<br>Inside Your Browser</h2>
+        <p class="section-sub reveal reveal-delay-2">No extra software. No switching tabs. GSTCopilot works wherever you do.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card reveal reveal-delay-1">
+          <div class="feature-icon">🔍</div>
+          <h3>Instant GSTIN Validation</h3>
+          <p>Verify any GSTIN in one click without switching tabs. Works on every website — invoices, PDFs, client emails, GST portal.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-2">
+          <div class="feature-icon">🚨</div>
+          <h3>ITC Mismatch Detection</h3>
+          <p>Catch mismatches between GSTR-2B and your purchase register before you file. No more post-filing surprises.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-3">
+          <div class="feature-icon">🔄</div>
+          <h3>GSTR Reconciliation</h3>
+          <p>Auto-compare GSTR-1 vs GSTR-3B without opening Excel. Get a clear mismatch report in seconds.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-4">
+          <div class="feature-icon">👥</div>
+          <h3>Bulk Client Processing</h3>
+          <p>Process up to 50 clients at once, saving hours every month. One-click autofill on the GST portal with your client list.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ DEMO ════════════════════════════════════════════════════════════ -->
+  <section id="demo">
+    <div class="container center">
+      <div class="section-tag reveal">Demo</div>
+      <h2 class="section-title reveal reveal-delay-1">See GSTCopilot in 60 Seconds</h2>
+      <p class="section-sub reveal reveal-delay-2">Watch how CAs use GSTCopilot to cut their GST verification time by 80%.</p>
+      <div class="demo-box reveal reveal-delay-3">
+        <div class="play-btn">▶</div>
+        <div class="demo-label">Demo video coming soon</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ HOW IT WORKS ════════════════════════════════════════════════════ -->
+  <section id="how">
+    <div class="container">
+      <div class="center">
+        <div class="section-tag reveal">How It Works</div>
+        <h2 class="section-title reveal reveal-delay-1">Up and Running in 2 Minutes</h2>
+        <p class="section-sub reveal reveal-delay-2">No complex setup. No GST portal login. Just install and go.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal reveal-delay-1">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h3>Choose a Plan</h3>
+            <p>Pick Free or a paid plan. Pay securely via Razorpay — UPI, cards, net banking all accepted. Your license key arrives in your inbox instantly.</p>
+          </div>
+        </div>
+        <div class="step reveal reveal-delay-2">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h3>Install the Extension</h3>
+            <p>Download the ZIP, load it in Chrome in under 2 minutes. No Chrome Web Store approval needed — works immediately.</p>
+          </div>
+        </div>
+        <div class="step reveal reveal-delay-3">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h3>Start Saving Time</h3>
+            <p>Open any GST portal page or invoice. GSTCopilot automatically highlights GSTINs and shows the Autofill button on every input field.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ PRICING ═════════════════════════════════════════════════════════ -->
+  <section id="pricing">
+    <div class="container">
+      <div class="center">
+        <div class="section-tag reveal">Pricing</div>
+        <h2 class="section-title reveal reveal-delay-1">Simple Pricing for CA Practices</h2>
+        <p class="section-sub reveal reveal-delay-2">No hidden fees. Cancel anytime. Start free.</p>
+      </div>
+      <div class="pricing-grid">
+
+        <!-- FREE -->
+        <div class="plan-card reveal reveal-delay-1">
+          <div class="plan-name">Free</div>
+          <div class="plan-price">₹0</div>
+          <div class="plan-period">forever</div>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li>5 GSTIN checks per month</li>
+            <li>HSN / SAC code lookup</li>
+            <li>Tax calculator</li>
+            <li>Page text GSTIN scanner</li>
+            <li class="dim">ITC mismatch detection</li>
+            <li class="dim">GSTR reconciliation</li>
+            <li class="dim">Bulk processing</li>
+          </ul>
+          <button class="btn-plan btn-plan-outline" onclick="openFreeModal()">Try Free</button>
+        </div>
+
+        <!-- STARTER -->
+        <div class="plan-card popular reveal reveal-delay-2">
+          <div class="popular-badge">MOST POPULAR</div>
+          <div class="plan-name">Starter</div>
+          <div class="plan-price"><sup>₹</sup>499</div>
+          <div class="plan-period">per month</div>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li>300 GSTIN checks per month</li>
+            <li>ITC mismatch detection</li>
+            <li>GSTR reconciliation</li>
+            <li>Bulk processing (up to 50 clients)</li>
+            <li>Client list autofill</li>
+            <li>HSN / SAC lookup</li>
+            <li class="dim">Risk alerts</li>
+            <li class="dim">Priority support</li>
+          </ul>
+          <button class="btn-plan btn-plan-green" onclick="buyPlan('starter')">Get Started</button>
+        </div>
+
+        <!-- PRO -->
+        <div class="plan-card pro reveal reveal-delay-3">
+          <div class="plan-name">Pro</div>
+          <div class="plan-price"><sup>₹</sup>999</div>
+          <div class="plan-period">per month</div>
+          <div class="plan-micro">Just ₹33 per day</div>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li>Unlimited GSTIN checks</li>
+            <li>Everything in Starter</li>
+            <li>GST risk alerts</li>
+            <li>Priority support</li>
+            <li>Early access to new features</li>
+          </ul>
+          <button class="btn-plan btn-plan-green" onclick="buyPlan('pro')">Upgrade Now</button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TESTIMONIALS ════════════════════════════════════════════════════ -->
+  <section id="testimonials">
+    <div class="container">
+      <div class="center">
+        <div class="section-tag reveal">Testimonials</div>
+        <h2 class="section-title reveal reveal-delay-1">What CAs Are Saying</h2>
+        <p class="section-sub reveal reveal-delay-2">Real feedback from the CA community across Gujarat.</p>
+      </div>
+      <div class="testi-grid">
+
+        <div class="testi-card reveal reveal-delay-1">
+          <div class="stars">★★★★★</div>
+          <p class="testi-text">Saves me 3 hours every filing season. GSTIN validation alone is worth the subscription. I don't know how I worked without it.</p>
+          <div class="testi-author">
+            <div class="testi-avatar">R</div>
+            <div>
+              <div class="testi-name">CA Rajesh Mehta</div>
+              <div class="testi-loc">Ahmedabad, Gujarat</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testi-card reveal reveal-delay-2">
+          <div class="stars">★★★★★</div>
+          <p class="testi-text">Found ITC mismatches I would have missed. The extension paid for itself in the very first month — and then some.</p>
+          <div class="testi-author">
+            <div class="testi-avatar">P</div>
+            <div>
+              <div class="testi-name">CA Priya Shah</div>
+              <div class="testi-loc">Surat, Gujarat</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testi-card reveal reveal-delay-3">
+          <div class="stars">★★★★★</div>
+          <p class="testi-text">Bulk processing completely changed how I handle multiple clients. I finish reconciliation in minutes now. Highly recommended.</p>
+          <div class="testi-author">
+            <div class="testi-avatar">A</div>
+            <div>
+              <div class="testi-name">CA Amit Patel</div>
+              <div class="testi-loc">Rajkot, Gujarat</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FINAL CTA ════════════════════════════════════════════════════════ -->
+  <section id="final-cta">
+    <div class="container">
+      <div class="section-tag reveal">Get Started</div>
+      <h2 class="section-title reveal reveal-delay-1">Start Saving Hours on GST Work Today</h2>
+      <p class="section-sub reveal reveal-delay-2">Join hundreds of CAs already using GSTCopilot to work smarter every filing season.</p>
+      <button class="btn-green reveal reveal-delay-3" style="font-size:17px; padding:16px 36px;" onclick="openFreeModal()">
+        ⚡ Try Free — No Card Required
+      </button>
+      <p class="cta-meta reveal reveal-delay-4">5 free checks every month. No credit card. Cancel anytime.</p>
+    </div>
+  </section>
+
+  <!-- ═══ FOOTER ═══════════════════════════════════════════════════════════ -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="logo">
+          <div class="logo-icon" style="width:28px;height:28px;font-size:14px;">🧾</div>
+          GSTCopilot
+        </div>
+        <span class="footer-tagline">Built for Indian Chartered Accountants</span>
+      </div>
+      <div class="footer-links">
+        <a href="/privacy-policy.html">Privacy Policy</a>
+        <a href="/terms.html">Terms &amp; Conditions</a>
+        <a href="/refund-policy.html">Refund Policy</a>
+        <a href="/contact.html">Contact Us</a>
+      </div>
+      <p class="footer-copy">
+        © 2024 GSTCopilot. All rights reserved. &nbsp;·&nbsp;
+        <a href="mailto:gstcopilot@gmail.com">gstcopilot@gmail.com</a> &nbsp;·&nbsp; +91 81163 17662
+      </p>
+    </div>
+  </footer>
+
+  <!-- ═══ FREE MODAL ═══════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="free-modal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeFreeModal()">✕</button>
+      <div style="font-size:28px;margin-bottom:10px;">🚀</div>
+      <div class="modal-title">Get Your Free License</div>
+      <div class="modal-sub">5 GSTIN checks, HSN lookup and tax calculator — free forever. Your license key arrives instantly.</div>
+      <input class="modal-input" id="free-email" type="email" placeholder="Your email address" />
+      <div class="modal-error" id="modal-error"></div>
+      <button class="btn-modal-submit" id="free-submit-btn" onclick="registerFree()">
+        Get Free License Key →
+      </button>
+      <div class="modal-result" id="modal-result">
+        <div class="modal-result-label">Your License Key</div>
+        <div class="modal-result-key" id="modal-result-key"></div>
+        <div class="modal-result-note">
+          📧 Also sent to your email. Use this key in the extension's Pro tab to activate.<br><br>
+          <a href="/gst-copilot-extension.zip" style="color: var(--green); font-weight:700;">
+            ⬇ Download the Extension
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script>
+    const API = 'https://gstcopilot-backend-1.onrender.com';
+    const STARTER_URL = 'https://rzp.io/rzp/p0sMNdF2';
+    const PRO_URL     = 'https://rzp.io/rzp/ZVfD4KEC';
+
+    // ── Scroll reveal ────────────────────────────────────────────────────
+    const revealObserver = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          revealObserver.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+    // ── Mobile menu ──────────────────────────────────────────────────────
+    document.getElementById('hamburger').addEventListener('click', () => {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+    document.getElementById('nav-links').addEventListener('click', e => {
+      if (e.target.tagName === 'A') document.getElementById('nav-links').classList.remove('open');
+    });
+
+    // ── Toast ────────────────────────────────────────────────────────────
+    function showToast(msg, type = 'info') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show toast-' + type;
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.remove('show'), type === 'error' ? 4000 : 2500);
+    }
+
+    // ── Free modal ────────────────────────────────────────────────────────
+    function openFreeModal() {
+      document.getElementById('free-modal').classList.add('open');
+      document.getElementById('free-email').focus();
+    }
+    function closeFreeModal() {
+      document.getElementById('free-modal').classList.remove('open');
+    }
+    document.getElementById('free-modal').addEventListener('click', e => {
+      if (e.target === document.getElementById('free-modal')) closeFreeModal();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeFreeModal(); });
+    document.getElementById('free-email').addEventListener('keypress', e => {
+      if (e.key === 'Enter') registerFree();
+    });
+
+    async function registerFree() {
+      const emailEl = document.getElementById('free-email');
+      const errEl   = document.getElementById('modal-error');
+      const btn     = document.getElementById('free-submit-btn');
+      const resultEl = document.getElementById('modal-result');
+      const keyEl    = document.getElementById('modal-result-key');
+      const email = emailEl.value.trim();
+
+      errEl.textContent = ''; errEl.classList.remove('show');
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errEl.textContent = 'Please enter a valid email address.';
+        errEl.classList.add('show'); emailEl.focus(); return;
+      }
+
+      const origText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin"></span> Getting your key…';
+
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+
+        const res = await fetch(API + '/api/auth/register-free', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+
+        const data = await res.json().catch(() => ({}));
+
+        if (res.status === 409) {
+          errEl.textContent = 'This email is already registered. Check your inbox for your key, or contact gstcopilot@gmail.com';
+          errEl.classList.add('show'); return;
+        }
+        if (!res.ok) {
+          errEl.textContent = 'Something went wrong. Please try again or contact gstcopilot@gmail.com';
+          errEl.classList.add('show'); return;
+        }
+
+        const key = data.license_key || data.licenseKey || data.key || '—';
+        keyEl.textContent = key;
+        resultEl.classList.add('show');
+        btn.style.display = 'none';
+        emailEl.style.display = 'none';
+        showToast('License key sent to ' + email, 'success');
+
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          errEl.textContent = 'Request timed out. Please try again.';
+        } else if (!navigator.onLine) {
+          errEl.textContent = 'No internet connection. Please check your connection and retry.';
+        } else {
+          errEl.textContent = 'Could not connect to server. Please try again in a moment.';
+        }
+        errEl.classList.add('show');
+      } finally {
+        if (btn.style.display !== 'none') { btn.disabled = false; btn.innerHTML = origText; }
+      }
+    }
+
+    // ── Buy paid plan ────────────────────────────────────────────────────
+    function buyPlan(plan) {
+      const url = plan === 'pro' ? PRO_URL : STARTER_URL;
+      const win = window.open(url, '_blank', 'noopener');
+      if (!win || win.closed || typeof win.closed === 'undefined') {
+        showToast('Please allow popups for this site to open the payment page', 'error');
+      }
+    }
+  </script>
+</body>
+</html>
