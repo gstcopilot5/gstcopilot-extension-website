@@ -12,42 +12,10 @@ export default function GSTCopilotPage() {
   const [copied, setCopied] = useState(false);
 
   async function downloadZip() {
-    setDownloading(true);
-    try {
-      const JSZip = (await import("jszip")).default;
-      const zip = new JSZip();
-      const folder = zip.folder("gst-copilot-extension")!;
-
-      // Fetch each file from /extension/
-      const fileNames = ["manifest.json", "popup.html", "popup.js", "content.js"];
-      const base = import.meta.env.BASE_URL;
-
-      await Promise.all(
-        fileNames.map(async (fname) => {
-          const res = await fetch(`${base}extension/${fname}`);
-          const text = await res.text();
-          folder.file(fname, text);
-        })
-      );
-
-      // Add icons placeholder note
-      folder.file(
-        "icons/README.txt",
-        "Add icon16.png (16x16), icon48.png (48x48), icon128.png (128x128) here.\nYou can use any green GST-themed icons."
-      );
-
-      const blob = await zip.generateAsync({ type: "blob" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "gst-copilot-extension.zip";
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setDownloading(false);
-    }
+    const a = document.createElement("a");
+    a.href = "https://github.com/gstcopilot5/gstcopilot-v2-backend/raw/main/extension.zip";
+    a.download = "gstcopilot-extension.zip";
+    a.click();
   }
 
   function copyInstall() {
