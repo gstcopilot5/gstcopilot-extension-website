@@ -787,7 +787,7 @@
   <div id="toast"></div>
 
   <script>
-    const API = 'https://e0915252-d539-4a59-8808-3df47d3b08ed-00-fh2jo8edcz1x.spock.replit.dev';
+    const API = 'https://gstcopilot-backend-1.onrender.com';
     const STARTER_URL = 'https://rzp.io/rzp/p0sMNdF2';
     const PRO_URL     = 'https://rzp.io/rzp/ZVfD4KEC';
 
@@ -859,7 +859,7 @@
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 15000);
 
-        const res = await fetch(API + '/api/auth/register-free', {
+        const res = await fetch(API + '/api/free-license', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email }),
